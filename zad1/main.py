@@ -6,7 +6,7 @@ WIDTH = 800
 HEIGHT = 600
 FPS = 60
 
-camera_fov = 500  # dodane: zmienna globalna FOV
+camera_fov = 500
 
 def normalize(vector):
     length = math.sqrt(sum(c * c for c in vector))
@@ -145,7 +145,7 @@ def zoom_out():
 
 def update():
     move_speed = 0.2
-    rotate_speed = 3
+    rotate_speed = 1
 
     if 'w' in keys_pressed:
         camera.move(dz=move_speed)
