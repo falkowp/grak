@@ -206,9 +206,7 @@ D - w prawo
 Q - w górę
 E - w dół
 
-Strzałki:
-↑ ↓ → ←
-- obrót kamery
+Strzałki - obrót kamery
 """
 tk.Label(frame, text=legend_text, justify="left").grid(row=9, column=0, columnspan=3, pady=5)
 
