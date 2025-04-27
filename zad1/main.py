@@ -6,6 +6,8 @@ WIDTH = 800
 HEIGHT = 600
 FPS = 60
 
+camera_fov = 500  # dodane: zmienna globalna FOV
+
 def normalize(vector):
     length = math.sqrt(sum(c * c for c in vector))
     if length == 0:
@@ -43,7 +45,7 @@ class Camera:
         self.right = [1, 0, 0]
         self.up = [0, 1, 0]
 
-    def move(self, dx=0, dy=0, dz=0):
+    def move(self, dx=0.0, dy=0.0, dz=0.0):
         for i in range(3):
             self.pos[i] += self.right[i] * dx
             self.pos[i] += self.up[i] * dy
@@ -62,9 +64,8 @@ button_action = None
 def project_point(px, py, pz):
     if pz <= 0:
         return None
-    fov = 500
-    screen_x = WIDTH // 2 + int((px * fov) / pz)
-    screen_y = HEIGHT // 2 - int((py * fov) / pz)
+    screen_x = WIDTH // 2 + int((px * camera_fov) / pz)
+    screen_y = HEIGHT // 2 - int((py * camera_fov) / pz)
     return screen_x, screen_y
 
 def create_cuboid(center_x, center_y, center_z, size_cx, size_cy, size_cz):
@@ -123,10 +124,27 @@ def do_move():
 
 def reset_camera():
     global camera
+    global camera_fov
     camera = Camera([0, 0, -5])
+    camera_fov = 500
+
+def zoom(event):
+    global camera_fov
+    if event.delta > 0:
+        camera_fov = min(camera_fov + 20, 2000)
+    else:
+        camera_fov = max(camera_fov - 20, 100)
+
+def zoom_in():
+    global camera_fov
+    camera_fov = min(camera_fov + 20, 2000)
+
+def zoom_out():
+    global camera_fov
+    camera_fov = max(camera_fov - 20, 100)
 
 def update():
-    move_speed = 1
+    move_speed = 0.2
     rotate_speed = 3
 
     if 'w' in keys_pressed:
@@ -180,7 +198,7 @@ def update():
 
 # GUI
 root = tk.Tk()
-root.title("Prawdziwa Kamera 3D")
+root.title("Kamera 3D")
 
 frame = tk.Frame(root)
 frame.pack(side="right", fill="y", padx=10, pady=10)
@@ -215,17 +233,32 @@ create_move_button(7, 2, "↺ roll lewo", lambda: camera.rotate(camera.forward, 
 btn_reset = tk.Button(frame, text="Reset Kamery", font=("Arial", 14), command=reset_camera)
 btn_reset.grid(row=8, column=0, columnspan=3, pady=10)
 
-tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
+tk.Label(frame, text="Zoom", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
+
+def create_zoom_button(row, text, action):
+    btn = tk.Button(frame, text=text, font=("Arial", 12))
+    btn.grid(row=row, column=0, columnspan=3, pady=2)
+    btn.bind("<ButtonPress-1>", lambda e: start_moving(action))
+    btn.bind("<ButtonRelease-1>", lambda e: stop_moving())
+
+create_zoom_button(10, "➕ Zoom In", zoom_in)
+create_zoom_button(11, "➖ Zoom Out", zoom_out)
+
+
+# Legenda
+tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=12, column=0, columnspan=3, pady=10)
 legend_text = """\
 W/S/A/D - ruch
 Q/E - góra/dół
 Strzałki - obrót 
 Z/X - roll kamery
+Scroll - zoom
 """
-tk.Label(frame, text=legend_text, justify="left").grid(row=10, column=0, columnspan=3, pady=5)
+tk.Label(frame, text=legend_text, justify="left").grid(row=13, column=0, columnspan=3, pady=5)
 
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
+root.bind("<MouseWheel>", zoom)
 
 update()
 root.mainloop()
