@@ -178,7 +178,7 @@ def update():
 
     root.after(int(1000 / FPS), update)
 
-# Start GUI
+# GUI
 root = tk.Tk()
 root.title("Prawdziwa Kamera 3D")
 
@@ -219,6 +219,7 @@ tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=9, column=
 legend_text = """\
 W/S/A/D - ruch
 Q/E - góra/dół
+Strzałki - obrót 
 Z/X - roll kamery
 """
 tk.Label(frame, text=legend_text, justify="left").grid(row=10, column=0, columnspan=3, pady=5)
