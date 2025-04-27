@@ -6,46 +6,72 @@ WIDTH = 800
 HEIGHT = 600
 FPS = 60
 
-camera_pos = [0, 0, -5]
-camera_rot = [0, 0, 0]
+def normalize(v):
+    length = math.sqrt(sum(c*c for c in v))
+    if length == 0:
+        return [0,0,0]
+    return [c/length for c in v]
+
+def cross(a, b):
+    return [
+        a[1]*b[2] - a[2]*b[1],
+        a[2]*b[0] - a[0]*b[2],
+        a[0]*b[1] - a[1]*b[0]
+    ]
+
+def dot(a, b):
+    return sum(i*j for i,j in zip(a,b))
+
+def rotate_vector(v, axis, angle_deg):
+    angle_rad = math.radians(angle_deg)
+    cos_theta = math.cos(angle_rad)
+    sin_theta = math.sin(angle_rad)
+    x, y, z = axis
+    vx, vy, vz = v
+
+    rotated = [
+        (cos_theta + (1 - cos_theta) * x * x) * vx + ((1 - cos_theta) * x * y - sin_theta * z) * vy + ((1 - cos_theta) * x * z + sin_theta * y) * vz,
+        ((1 - cos_theta) * y * x + sin_theta * z) * vx + (cos_theta + (1 - cos_theta) * y * y) * vy + ((1 - cos_theta) * y * z - sin_theta * x) * vz,
+        ((1 - cos_theta) * z * x - sin_theta * y) * vx + ((1 - cos_theta) * z * y + sin_theta * x) * vy + (cos_theta + (1 - cos_theta) * z * z) * vz
+    ]
+    return rotated
+
+class Camera:
+    def __init__(self, pos):
+        self.pos = pos
+        self.forward = [0, 0, 1]
+        self.right = [1, 0, 0]
+        self.up = [0, 1, 0]
+
+    def move(self, dx=0, dy=0, dz=0):
+        for i in range(3):
+            self.pos[i] += self.right[i] * dx
+            self.pos[i] += self.up[i] * dy
+            self.pos[i] += self.forward[i] * dz
+
+    def rotate(self, axis, angle_deg):
+        # Obraca wszystkie osie wokół zadanej osi
+        self.forward = normalize(rotate_vector(self.forward, axis, angle_deg))
+        self.right = normalize(rotate_vector(self.right, axis, angle_deg))
+        self.up = normalize(cross(self.right, self.forward))
+
+camera = Camera([0, 0, -5])
 
 keys_pressed = set()
 button_action = None
 
-def rotate_point(px, py, pz, rx, ry, rz):
-    rx = math.radians(rx)
-    ry = math.radians(ry)
-    rz = math.radians(rz)
-
-    # wokół osi X
-    cosa = math.cos(rx)
-    sina = math.sin(rx)
-    py, pz = py * cosa - pz * sina, py * sina + pz * cosa
-
-    # wokół osi Y
-    cosb = math.cos(ry)
-    sinb = math.sin(ry)
-    px, pz = px * cosb + pz * sinb, -px * sinb + pz * cosb
-
-    # wokół osi Z
-    cosc = math.cos(rz)
-    sinc = math.sin(rz)
-    px, py = px * cosc - py * sinc, px * sinc + py * cosc
-
-    return px, py, pz
-
-def project_point(ppx, ppy, ppz):
-    if ppz <= 0:
+def project_point(x, y, z):
+    if z <= 0:
         return None
     fov = 500
-    px = WIDTH // 2 + int((ppx * fov) / ppz)
-    py = HEIGHT // 2 - int((ppy * fov) / ppz)
-    return px, py
+    px = WIDTH // 2 + int((x * fov) / z)
+    py = HEIGHT // 2 - int((y * fov) / z)
+    return (px, py)
 
-def create_cuboid(cx, cy, cz, size_cx, size_cy, size_cz):
-    sx = size_cx / 2
-    sy = size_cy / 2
-    sz = size_cz / 2
+def create_cuboid(cx, cy, cz, size_x, size_y, size_z):
+    sx = size_x / 2
+    sy = size_y / 2
+    sz = size_z / 2
     return [
         [cx - sx, cy - sy, cz - sz],
         [cx + sx, cy - sy, cz - sz],
@@ -82,19 +108,6 @@ def key_down(event):
 def key_up(event):
     keys_pressed.discard(event.keysym.lower())
 
-def move_camera(dx=0, dy=0, dz=0, drotx=0, droty=0, drotz=0):
-    camera_pos[0] += dx
-    camera_pos[1] += dy
-    camera_pos[2] += dz
-    camera_rot[0] += drotx
-    camera_rot[1] += droty
-    camera_rot[2] += drotz
-
-def reset_camera():
-    global camera_pos, camera_rot
-    camera_pos = [0, 0, -5]
-    camera_rot = [0, 0, 0]
-
 def start_moving(action):
     global button_action
     button_action = action
@@ -110,21 +123,39 @@ def do_move():
         button_action()
         root.after(50, do_move)
 
+def reset_camera():
+    global camera
+    camera = Camera([0, 0, -5])
+
 def update():
     speed = 0.2
+    rot_speed = 3
 
     if 'w' in keys_pressed:
-        camera_pos[2] += speed
+        camera.move(dz=speed)
     if 's' in keys_pressed:
-        camera_pos[2] -= speed
+        camera.move(dz=-speed)
     if 'a' in keys_pressed:
-        camera_pos[0] -= speed
+        camera.move(dx=-speed)
     if 'd' in keys_pressed:
-        camera_pos[0] += speed
+        camera.move(dx=speed)
     if 'q' in keys_pressed:
-        camera_pos[1] += speed
+        camera.move(dy=speed)
     if 'e' in keys_pressed:
-        camera_pos[1] -= speed
+        camera.move(dy=-speed)
+
+    if 'left' in keys_pressed:
+        camera.rotate(camera.up, -rot_speed)
+    if 'right' in keys_pressed:
+        camera.rotate(camera.up, rot_speed)
+    if 'up' in keys_pressed:
+        camera.rotate(camera.right, -rot_speed)
+    if 'down' in keys_pressed:
+        camera.rotate(camera.right, rot_speed)
+    if 'z' in keys_pressed:
+        camera.rotate(camera.forward, rot_speed) # roll
+    if 'x' in keys_pressed:
+        camera.rotate(camera.forward, -rot_speed) # roll
 
     canvas.delete("all")
 
@@ -132,13 +163,11 @@ def update():
         projected_points = []
 
         for vertex in cuboid:
-            vx = vertex[0] - camera_pos[0]
-            vy = vertex[1] - camera_pos[1]
-            vz = vertex[2] - camera_pos[2]
-
-            vx, vy, vz = rotate_point(vx, vy, vz, camera_rot[0], camera_rot[1], camera_rot[2])
-
-            proj = project_point(vx, vy, vz)
+            rel = [vertex[i] - camera.pos[i] for i in range(3)]
+            x = dot(rel, camera.right)
+            y = dot(rel, camera.up)
+            z = dot(rel, camera.forward)
+            proj = project_point(x, y, z)
             projected_points.append(proj if proj else None)
 
         for edge in edges:
@@ -151,7 +180,7 @@ def update():
 
 # Start GUI
 root = tk.Tk()
-root.title("Wirtualna Kamera 3D")
+root.title("Prawdziwa Kamera 3D")
 
 frame = tk.Frame(root)
 frame.pack(side="right", fill="y", padx=10, pady=10)
@@ -162,7 +191,6 @@ canvas.pack(side="left")
 # Panel sterowania
 tk.Label(frame, text="Ruch kamery", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=5)
 
-# Funkcja pomocnicza do tworzenia przycisków ruchu
 def create_move_button(row, col, text, action):
     btn = tk.Button(frame, text=text, font=("Arial", 14))
     btn.grid(row=row, column=col, padx=5, pady=5)
@@ -170,43 +198,37 @@ def create_move_button(row, col, text, action):
     btn.bind("<ButtonRelease-1>", lambda e: stop_moving())
 
 # Przyciski ruchu
-create_move_button(1, 1, "↑", lambda: move_camera(dz=1))
-create_move_button(3, 1, "↓", lambda: move_camera(dz=-1))
-create_move_button(2, 0, "←", lambda: move_camera(dx=-1))
-create_move_button(2, 2, "→", lambda: move_camera(dx=1))
-create_move_button(1, 0, "⤒", lambda: move_camera(dy=1))
-create_move_button(1, 2, "⤓", lambda: move_camera(dy=-1))
+create_move_button(1, 1, "↑", lambda: camera.move(dz=1))
+create_move_button(3, 1, "↓", lambda: camera.move(dz=-1))
+create_move_button(2, 0, "←", lambda: camera.move(dx=-1))
+create_move_button(2, 2, "→", lambda: camera.move(dx=1))
+create_move_button(1, 0, "⤒", lambda: camera.move(dy=1))
+create_move_button(1, 2, "⤓", lambda: camera.move(dy=-1))
 
 tk.Label(frame, text="Obrót kamery", font=("Arial", 12, "bold")).grid(row=4, column=0, columnspan=3, pady=10)
 
-# Przyciski obrotu
-create_move_button(5, 0, "↻ w prawo", lambda: move_camera(droty=5))
-create_move_button(5, 2, "↺ w lewo", lambda: move_camera(droty=-5))
-create_move_button(6, 0, "↥ w górę", lambda: move_camera(drotx=-5))
-create_move_button(6, 2, "↧ w dół", lambda: move_camera(drotx=5))
-create_move_button(7, 0, "↻ roll prawo", lambda: move_camera(drotz=5))
-create_move_button(7, 2, "↺ roll lewo", lambda: move_camera(drotz=-5))
+create_move_button(5, 0, "↻ w prawo", lambda: camera.rotate(camera.up, 5))
+create_move_button(5, 2, "↺ w lewo", lambda: camera.rotate(camera.up, -5))
+create_move_button(6, 0, "↥ w górę", lambda: camera.rotate(camera.right, -5))
+create_move_button(6, 2, "↧ w dół", lambda: camera.rotate(camera.right, 5))
+create_move_button(7, 0, "↻ roll prawo", lambda: camera.rotate(camera.forward, 5))
+create_move_button(7, 2, "↺ roll lewo", lambda: camera.rotate(camera.forward, -5))
 
-# Reset kamery
 btn_reset = tk.Button(frame, text="Reset Kamery", font=("Arial", 14), command=reset_camera)
 btn_reset.grid(row=8, column=0, columnspan=3, pady=10)
 
 # Legenda
 tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
 legend_text = """\
-W - przód
-S - tył
-A - w lewo
-D - w prawo
-Q - w górę
-E - w dół
+W/S/A/D - ruch
+Q/E - góra/dół
+Strzałki - obrót kamery
+Z/X - roll kamery
 """
 tk.Label(frame, text=legend_text, justify="left").grid(row=10, column=0, columnspan=3, pady=5)
 
-# Obsługa klawiatury
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
 
-# Start pętli
 update()
 root.mainloop()
