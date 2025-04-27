@@ -17,14 +17,17 @@ def rotate_point(px, py, pz, rx, ry, rz):
     ry = math.radians(ry)
     rz = math.radians(rz)
 
+    # wokół osi X
     cosa = math.cos(rx)
     sina = math.sin(rx)
     py, pz = py * cosa - pz * sina, py * sina + pz * cosa
 
+    # wokół osi Y
     cosb = math.cos(ry)
     sinb = math.sin(ry)
     px, pz = px * cosb + pz * sinb, -px * sinb + pz * cosb
 
+    # wokół osi Z
     cosc = math.cos(rz)
     sinc = math.sin(rz)
     px, py = px * cosc - py * sinc, px * sinc + py * cosc
@@ -74,10 +77,10 @@ for _ in range(5):
     colors.append("#%06x" % random.randint(0, 0xFFFFFF))
 
 def key_down(event):
-    keys_pressed.add(event.keysym)
+    keys_pressed.add(event.keysym.lower())
 
 def key_up(event):
-    keys_pressed.discard(event.keysym)
+    keys_pressed.discard(event.keysym.lower())
 
 def move_camera(dx=0, dy=0, dz=0, drotx=0, droty=0, drotz=0):
     camera_pos[0] += dx
@@ -107,10 +110,8 @@ def do_move():
         button_action()
         root.after(50, do_move)
 
-
 def update():
     speed = 0.2
-    rot_speed = 3
 
     if 'w' in keys_pressed:
         camera_pos[2] += speed
@@ -124,14 +125,6 @@ def update():
         camera_pos[1] += speed
     if 'e' in keys_pressed:
         camera_pos[1] -= speed
-    if 'Up' in keys_pressed:
-        camera_rot[0] -= rot_speed
-    if 'Down' in keys_pressed:
-        camera_rot[0] += rot_speed
-    if 'Left' in keys_pressed:
-        camera_rot[1] -= rot_speed
-    if 'Right' in keys_pressed:
-        camera_rot[1] += rot_speed
 
     canvas.delete("all")
 
@@ -191,13 +184,15 @@ create_move_button(5, 0, "↻ w prawo", lambda: move_camera(droty=5))
 create_move_button(5, 2, "↺ w lewo", lambda: move_camera(droty=-5))
 create_move_button(6, 0, "↥ w górę", lambda: move_camera(drotx=-5))
 create_move_button(6, 2, "↧ w dół", lambda: move_camera(drotx=5))
+create_move_button(7, 0, "↻ roll prawo", lambda: move_camera(drotz=5))
+create_move_button(7, 2, "↺ roll lewo", lambda: move_camera(drotz=-5))
 
 # Reset kamery
 btn_reset = tk.Button(frame, text="Reset Kamery", font=("Arial", 14), command=reset_camera)
-btn_reset.grid(row=7, column=0, columnspan=3, pady=10)
+btn_reset.grid(row=8, column=0, columnspan=3, pady=10)
 
 # Legenda
-tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=8, column=0, columnspan=3, pady=10)
+tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
 legend_text = """\
 W - przód
 S - tył
@@ -205,10 +200,8 @@ A - w lewo
 D - w prawo
 Q - w górę
 E - w dół
-
-Strzałki - obrót kamery
 """
-tk.Label(frame, text=legend_text, justify="left").grid(row=9, column=0, columnspan=3, pady=5)
+tk.Label(frame, text=legend_text, justify="left").grid(row=10, column=0, columnspan=3, pady=5)
 
 # Obsługa klawiatury
 root.bind("<KeyPress>", key_down)
