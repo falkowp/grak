@@ -6,33 +6,33 @@ WIDTH = 800
 HEIGHT = 600
 FPS = 60
 
-def normalize(v):
-    length = math.sqrt(sum(c*c for c in v))
+def normalize(vector):
+    length = math.sqrt(sum(c * c for c in vector))
     if length == 0:
-        return [0,0,0]
-    return [c/length for c in v]
+        return [0, 0, 0]
+    return [c / length for c in vector]
 
-def cross(a, b):
+def cross(vec_a, vec_b):
     return [
-        a[1]*b[2] - a[2]*b[1],
-        a[2]*b[0] - a[0]*b[2],
-        a[0]*b[1] - a[1]*b[0]
+        vec_a[1]*vec_b[2] - vec_a[2]*vec_b[1],
+        vec_a[2]*vec_b[0] - vec_a[0]*vec_b[2],
+        vec_a[0]*vec_b[1] - vec_a[1]*vec_b[0]
     ]
 
-def dot(a, b):
-    return sum(i*j for i,j in zip(a,b))
+def dot(vec_a, vec_b):
+    return sum(i * j for i, j in zip(vec_a, vec_b))
 
-def rotate_vector(v, axis, angle_deg):
+def rotate_vector(vector, axis, angle_deg):
     angle_rad = math.radians(angle_deg)
     cos_theta = math.cos(angle_rad)
     sin_theta = math.sin(angle_rad)
-    x, y, z = axis
-    vx, vy, vz = v
+    ax, ay, az = axis
+    vx, vy, vz = vector
 
     rotated = [
-        (cos_theta + (1 - cos_theta) * x * x) * vx + ((1 - cos_theta) * x * y - sin_theta * z) * vy + ((1 - cos_theta) * x * z + sin_theta * y) * vz,
-        ((1 - cos_theta) * y * x + sin_theta * z) * vx + (cos_theta + (1 - cos_theta) * y * y) * vy + ((1 - cos_theta) * y * z - sin_theta * x) * vz,
-        ((1 - cos_theta) * z * x - sin_theta * y) * vx + ((1 - cos_theta) * z * y + sin_theta * x) * vy + (cos_theta + (1 - cos_theta) * z * z) * vz
+        (cos_theta + (1 - cos_theta) * ax * ax) * vx + ((1 - cos_theta) * ax * ay - sin_theta * az) * vy + ((1 - cos_theta) * ax * az + sin_theta * ay) * vz,
+        ((1 - cos_theta) * ay * ax + sin_theta * az) * vx + (cos_theta + (1 - cos_theta) * ay * ay) * vy + ((1 - cos_theta) * ay * az - sin_theta * ax) * vz,
+        ((1 - cos_theta) * az * ax - sin_theta * ay) * vx + ((1 - cos_theta) * az * ay + sin_theta * ax) * vy + (cos_theta + (1 - cos_theta) * az * az) * vz
     ]
     return rotated
 
@@ -50,37 +50,36 @@ class Camera:
             self.pos[i] += self.forward[i] * dz
 
     def rotate(self, axis, angle_deg):
-        # Obraca wszystkie osie wokół zadanej osi
         self.forward = normalize(rotate_vector(self.forward, axis, angle_deg))
         self.right = normalize(rotate_vector(self.right, axis, angle_deg))
-        self.up = normalize(cross(self.right, self.forward))
+        self.up = normalize(cross(self.forward, self.right))
 
 camera = Camera([0, 0, -5])
 
 keys_pressed = set()
 button_action = None
 
-def project_point(x, y, z):
-    if z <= 0:
+def project_point(px, py, pz):
+    if pz <= 0:
         return None
     fov = 500
-    px = WIDTH // 2 + int((x * fov) / z)
-    py = HEIGHT // 2 - int((y * fov) / z)
-    return (px, py)
+    screen_x = WIDTH // 2 + int((px * fov) / pz)
+    screen_y = HEIGHT // 2 - int((py * fov) / pz)
+    return screen_x, screen_y
 
-def create_cuboid(cx, cy, cz, size_x, size_y, size_z):
-    sx = size_x / 2
-    sy = size_y / 2
-    sz = size_z / 2
+def create_cuboid(center_x, center_y, center_z, size_cx, size_cy, size_cz):
+    half_sx = size_cx / 2
+    half_sy = size_cy / 2
+    half_sz = size_cz / 2
     return [
-        [cx - sx, cy - sy, cz - sz],
-        [cx + sx, cy - sy, cz - sz],
-        [cx + sx, cy + sy, cz - sz],
-        [cx - sx, cy + sy, cz - sz],
-        [cx - sx, cy - sy, cz + sz],
-        [cx + sx, cy - sy, cz + sz],
-        [cx + sx, cy + sy, cz + sz],
-        [cx - sx, cy + sy, cz + sz],
+        [center_x - half_sx, center_y - half_sy, center_z - half_sz],
+        [center_x + half_sx, center_y - half_sy, center_z - half_sz],
+        [center_x + half_sx, center_y + half_sy, center_z - half_sz],
+        [center_x - half_sx, center_y + half_sy, center_z - half_sz],
+        [center_x - half_sx, center_y - half_sy, center_z + half_sz],
+        [center_x + half_sx, center_y - half_sy, center_z + half_sz],
+        [center_x + half_sx, center_y + half_sy, center_z + half_sz],
+        [center_x - half_sx, center_y + half_sy, center_z + half_sz],
     ]
 
 edges = [
@@ -93,13 +92,13 @@ cuboids = []
 colors = []
 
 for _ in range(5):
-    x = random.uniform(-5, 5)
-    y = random.uniform(-3, 3)
-    z = random.uniform(5, 15)
+    pos_x = random.uniform(-5, 5)
+    pos_y = random.uniform(-3, 3)
+    pos_z = random.uniform(5, 15)
     size_x = random.uniform(0.5, 2)
     size_y = random.uniform(0.5, 2)
     size_z = random.uniform(0.5, 2)
-    cuboids.append(create_cuboid(x, y, z, size_x, size_y, size_z))
+    cuboids.append(create_cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z))
     colors.append("#%06x" % random.randint(0, 0xFFFFFF))
 
 def key_down(event):
@@ -118,7 +117,6 @@ def stop_moving():
     button_action = None
 
 def do_move():
-    global button_action
     if button_action is not None and callable(button_action):
         button_action()
         root.after(50, do_move)
@@ -128,34 +126,34 @@ def reset_camera():
     camera = Camera([0, 0, -5])
 
 def update():
-    speed = 0.2
-    rot_speed = 3
+    move_speed = 1
+    rotate_speed = 3
 
     if 'w' in keys_pressed:
-        camera.move(dz=speed)
+        camera.move(dz=move_speed)
     if 's' in keys_pressed:
-        camera.move(dz=-speed)
+        camera.move(dz=-move_speed)
     if 'a' in keys_pressed:
-        camera.move(dx=-speed)
+        camera.move(dx=-move_speed)
     if 'd' in keys_pressed:
-        camera.move(dx=speed)
+        camera.move(dx=move_speed)
     if 'q' in keys_pressed:
-        camera.move(dy=speed)
+        camera.move(dy=move_speed)
     if 'e' in keys_pressed:
-        camera.move(dy=-speed)
+        camera.move(dy=-move_speed)
 
     if 'left' in keys_pressed:
-        camera.rotate(camera.up, -rot_speed)
+        camera.rotate(camera.up, -rotate_speed)
     if 'right' in keys_pressed:
-        camera.rotate(camera.up, rot_speed)
+        camera.rotate(camera.up, rotate_speed)
     if 'up' in keys_pressed:
-        camera.rotate(camera.right, -rot_speed)
+        camera.rotate(camera.right, -rotate_speed)
     if 'down' in keys_pressed:
-        camera.rotate(camera.right, rot_speed)
+        camera.rotate(camera.right, rotate_speed)
     if 'z' in keys_pressed:
-        camera.rotate(camera.forward, rot_speed) # roll
+        camera.rotate(camera.forward, rotate_speed)
     if 'x' in keys_pressed:
-        camera.rotate(camera.forward, -rot_speed) # roll
+        camera.rotate(camera.forward, -rotate_speed)
 
     canvas.delete("all")
 
@@ -163,20 +161,22 @@ def update():
         projected_points = []
 
         for vertex in cuboid:
-            rel = [vertex[i] - camera.pos[i] for i in range(3)]
-            x = dot(rel, camera.right)
-            y = dot(rel, camera.up)
-            z = dot(rel, camera.forward)
-            proj = project_point(x, y, z)
-            projected_points.append(proj if proj else None)
+            rel_x = vertex[0] - camera.pos[0]
+            rel_y = vertex[1] - camera.pos[1]
+            rel_z = vertex[2] - camera.pos[2]
+            x_proj = dot([rel_x, rel_y, rel_z], camera.right)
+            y_proj = dot([rel_x, rel_y, rel_z], camera.up)
+            z_proj = dot([rel_x, rel_y, rel_z], camera.forward)
+            proj_point = project_point(x_proj, y_proj, z_proj)
+            projected_points.append(proj_point if proj_point else None)
 
-        for edge in edges:
-            p1 = projected_points[edge[0]]
-            p2 = projected_points[edge[1]]
-            if p1 and p2:
-                canvas.create_line(p1[0], p1[1], p2[0], p2[1], fill=color)
+        for edge_start, edge_end in edges:
+            point1 = projected_points[edge_start]
+            point2 = projected_points[edge_end]
+            if point1 and point2:
+                canvas.create_line(point1[0], point1[1], point2[0], point2[1], fill=color)
 
-    root.after(int(1000/FPS), update)
+    root.after(int(1000 / FPS), update)
 
 # Start GUI
 root = tk.Tk()
@@ -188,16 +188,14 @@ frame.pack(side="right", fill="y", padx=10, pady=10)
 canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT, bg="white")
 canvas.pack(side="left")
 
-# Panel sterowania
-tk.Label(frame, text="Ruch kamery", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=5)
-
 def create_move_button(row, col, text, action):
     btn = tk.Button(frame, text=text, font=("Arial", 14))
     btn.grid(row=row, column=col, padx=5, pady=5)
     btn.bind("<ButtonPress-1>", lambda e: start_moving(action))
     btn.bind("<ButtonRelease-1>", lambda e: stop_moving())
 
-# Przyciski ruchu
+tk.Label(frame, text="Ruch kamery", font=("Arial", 12, "bold")).grid(row=0, column=0, columnspan=3, pady=5)
+
 create_move_button(1, 1, "↑", lambda: camera.move(dz=1))
 create_move_button(3, 1, "↓", lambda: camera.move(dz=-1))
 create_move_button(2, 0, "←", lambda: camera.move(dx=-1))
@@ -217,12 +215,10 @@ create_move_button(7, 2, "↺ roll lewo", lambda: camera.rotate(camera.forward, 
 btn_reset = tk.Button(frame, text="Reset Kamery", font=("Arial", 14), command=reset_camera)
 btn_reset.grid(row=8, column=0, columnspan=3, pady=10)
 
-# Legenda
 tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
 legend_text = """\
 W/S/A/D - ruch
 Q/E - góra/dół
-Strzałki - obrót kamery
 Z/X - roll kamery
 """
 tk.Label(frame, text=legend_text, justify="left").grid(row=10, column=0, columnspan=3, pady=5)
