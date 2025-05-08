@@ -5,6 +5,11 @@ import random
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
+EDGES = [
+    (0,1), (1,2), (2,3), (3,0),
+    (4,5), (5,6), (6,7), (7,4),
+    (0,4), (1,5), (2,6), (3,7)
+]
 
 camera_fov = 500
 
@@ -58,6 +63,54 @@ class Camera:
 
 camera = Camera([0, 0, -5])
 
+class Triangle:
+    def __init__(self, pts:list[3]):
+        self.pts = pts
+        self.norm = self.getNormal()
+        
+    def getNormal(self):
+        w0 = [self.pts[0][0] - self.pts[1][0], self.pts[0][1] - self.pts[1][1], self.pts[0][2] - self.pts[1][2]]
+        w1 = [self.pts[2][0] - self.pts[1][0], self.pts[2][1] - self.pts[1][1], self.pts[2][2] - self.pts[1][2]]
+        
+        return [w0[1]*w1[2] - w0[2]*w1[1], -1*(w0[0]*w1[2] - w0[2]*w1[0]), w0[0]*w1[1] - w0[1]*w1[0]]    
+        # wyjęte z zeszytu z algebry xD
+
+class Cuboid:
+    pts = []
+    tris:list
+    def __init__(self, pts):
+        self.pts = pts
+        self.tris = self.makeTris()
+
+    def __init__(self, cX, cY, cZ, w, l, d):
+        self.pts = self.makePts(cX,cY,cZ,w,l,d)
+        self.tris = self.makeTris()
+
+    def makePts(self, cX, cY, cZ, w, l, d):
+        w2 = w/2; l2 = l/2; d2 = d/2
+        return [
+            [cX - w2, cY - l2, cZ - d2],
+            [cX + w2, cY - l2, cZ - d2],
+            [cX + w2, cY + l2, cZ - d2],
+            [cX - w2, cY + l2, cZ - d2],
+            [cX - w2, cY - l2, cZ + d2],
+            [cX + w2, cY - l2, cZ + d2],
+            [cX + w2, cY + l2, cZ + d2],
+            [cX - w2, cY + l2, cZ + d2],
+        ]
+    
+    # lista trójkątów w ośmiokącie - po 2 na ścianę (kolejność istotna). Ważne dla BSP
+    def makeTris(self):
+        ret = list()
+        ret.extend((Triangle((self.pts[0], self.pts[1], self.pts[2])), Triangle((self.pts[0], self.pts[2], self.pts[3])),
+                   Triangle((self.pts[2], self.pts[1], self.pts[5])), Triangle((self.pts[2], self.pts[5], self.pts[6])),
+                   Triangle((self.pts[5], self.pts[7], self.pts[6])), Triangle((self.pts[5], self.pts[4], self.pts[7])),
+                   Triangle((self.pts[7], self.pts[4], self.pts[0])), Triangle((self.pts[7], self.pts[0], self.pts[3])),
+                   Triangle((self.pts[1], self.pts[0], self.pts[5])), Triangle((self.pts[0], self.pts[4], self.pts[5])),
+                   Triangle((self.pts[2], self.pts[7], self.pts[3])), Triangle((self.pts[2], self.pts[6], self.pts[7]))))
+        return ret
+
+
 keys_pressed = set()
 button_action = None
 
@@ -68,26 +121,6 @@ def project_point(px, py, pz):
     screen_y = HEIGHT // 2 - int((py * camera_fov) / pz)
     return screen_x, screen_y
 
-def create_cuboid(center_x, center_y, center_z, size_cx, size_cy, size_cz):
-    half_sx = size_cx / 2
-    half_sy = size_cy / 2
-    half_sz = size_cz / 2
-    return [
-        [center_x - half_sx, center_y - half_sy, center_z - half_sz],
-        [center_x + half_sx, center_y - half_sy, center_z - half_sz],
-        [center_x + half_sx, center_y + half_sy, center_z - half_sz],
-        [center_x - half_sx, center_y + half_sy, center_z - half_sz],
-        [center_x - half_sx, center_y - half_sy, center_z + half_sz],
-        [center_x + half_sx, center_y - half_sy, center_z + half_sz],
-        [center_x + half_sx, center_y + half_sy, center_z + half_sz],
-        [center_x - half_sx, center_y + half_sy, center_z + half_sz],
-    ]
-
-edges = [
-    (0,1), (1,2), (2,3), (3,0),
-    (4,5), (5,6), (6,7), (7,4),
-    (0,4), (1,5), (2,6), (3,7)
-]
 
 cuboids = []
 colors = []
@@ -99,7 +132,7 @@ for _ in range(5):
     size_x = random.uniform(0.5, 2)
     size_y = random.uniform(0.5, 2)
     size_z = random.uniform(0.5, 2)
-    cuboids.append(create_cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z))
+    cuboids.append(Cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z))
     colors.append("#%06x" % random.randint(0, 0xFFFFFF))
 
 def key_down(event):
@@ -127,13 +160,6 @@ def reset_camera():
     global camera_fov
     camera = Camera([0, 0, -5])
     camera_fov = 500
-
-# def zoom(event):
-#     global camera_fov
-#     if event.delta > 0:
-#         camera_fov = min(camera_fov + 20, 2000)
-#     else:
-#         camera_fov = max(camera_fov - 20, 100)
 
 def zoom_in():
     global camera_fov
@@ -178,12 +204,15 @@ def update():
     if 'down' in keys_pressed:
         zoom_out()
 
+    if 'escape' in keys_pressed:
+        root.quit()
+
     canvas.delete("all")
 
     for cuboid, color in zip(cuboids, colors):
         projected_points = []
 
-        for vertex in cuboid:
+        for vertex in cuboid.pts:
             rel_x = vertex[0] - camera.pos[0]
             rel_y = vertex[1] - camera.pos[1]
             rel_z = vertex[2] - camera.pos[2]
@@ -193,7 +222,7 @@ def update():
             proj_point = project_point(x_proj, y_proj, z_proj)
             projected_points.append(proj_point if proj_point else None)
 
-        for edge_start, edge_end in edges:
+        for edge_start, edge_end in EDGES:
             point1 = projected_points[edge_start]
             point2 = projected_points[edge_end]
             if point1 and point2:

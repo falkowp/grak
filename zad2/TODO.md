@@ -1,4 +1,4 @@
-- [ ] Klasa(struktura) obiektów
+- [x] Klasa(struktura) obiektów
 - [ ] Rysowanie trójkątów zamiast linii
 - [ ] Budowanie drzewa BSP
 - [ ] Rysowanie na podstawie BSP 
