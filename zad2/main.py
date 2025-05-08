@@ -66,14 +66,15 @@ camera = Camera([0, 0, -5])
 class Triangle:
     def __init__(self, pts:list[3]):
         self.pts = pts
-        self.norm = self.getNormal()
+        self.norm = self.setNormal()
         
-    def getNormal(self):
+    def setNormal(self):
         w0 = [self.pts[0][0] - self.pts[1][0], self.pts[0][1] - self.pts[1][1], self.pts[0][2] - self.pts[1][2]]
         w1 = [self.pts[2][0] - self.pts[1][0], self.pts[2][1] - self.pts[1][1], self.pts[2][2] - self.pts[1][2]]
         
         return [w0[1]*w1[2] - w0[2]*w1[1], -1*(w0[0]*w1[2] - w0[2]*w1[0]), w0[0]*w1[1] - w0[1]*w1[0]]    
         # wyjęte z zeszytu z algebry xD
+    
 
 class Cuboid:
     pts = []
@@ -99,7 +100,7 @@ class Cuboid:
             [cX - w2, cY + l2, cZ + d2],
         ]
     
-    # lista trójkątów w ośmiokącie - po 2 na ścianę (kolejność istotna). Ważne dla BSP
+    # lista trójkątów w bryle - po 2 na ścianę (kolejność istotna). Ważne dla BSP
     def makeTris(self):
         ret = list()
         ret.extend((Triangle((self.pts[0], self.pts[1], self.pts[2])), Triangle((self.pts[0], self.pts[2], self.pts[3])),
@@ -111,14 +112,22 @@ class Cuboid:
         return ret
 
 
+class BSPNode:
+    def __init__(self, val):
+        self.left = None
+        self.right = None
+        self.val = val
+
+
 keys_pressed = set()
 button_action = None
 
 def project_point(px, py, pz):
-    if pz <= 0:
-        return None
-    screen_x = WIDTH // 2 + int((px * camera_fov) / pz)
-    screen_y = HEIGHT // 2 - int((py * camera_fov) / pz)
+    div = pz if pz > 0 else 1
+    # if pz <= 0: 
+    #   return None
+    screen_x = WIDTH / 2 + int((px * camera_fov) / div) # tu plus
+    screen_y = HEIGHT / 2 - int((py * camera_fov) / div)
     return screen_x, screen_y
 
 
@@ -126,12 +135,12 @@ cuboids = []
 colors = []
 
 for _ in range(5):
-    pos_x = random.uniform(-5, 5)
-    pos_y = random.uniform(-3, 3)
-    pos_z = random.uniform(5, 15)
-    size_x = random.uniform(0.5, 2)
-    size_y = random.uniform(0.5, 2)
-    size_z = random.uniform(0.5, 2)
+    pos_x = random.uniform(-200, 200)
+    pos_y = random.uniform(-200, 200)
+    pos_z = random.uniform(-200, 200)
+    size_x = random.uniform(50, 200)
+    size_y = random.uniform(50, 200)
+    size_z = random.uniform(50, 200)
     cuboids.append(Cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z))
     colors.append("#%06x" % random.randint(0, 0xFFFFFF))
 
@@ -170,8 +179,8 @@ def zoom_out():
     camera_fov = max(camera_fov - 20, 100)
 
 def update():
-    move_speed = 0.2
-    rotate_speed = 1
+    move_speed = 10
+    rotate_speed = 2
 
     if 'w' in keys_pressed:
         camera.move(dz=move_speed)
@@ -212,22 +221,42 @@ def update():
     for cuboid, color in zip(cuboids, colors):
         projected_points = []
 
-        for vertex in cuboid.pts:
-            rel_x = vertex[0] - camera.pos[0]
-            rel_y = vertex[1] - camera.pos[1]
-            rel_z = vertex[2] - camera.pos[2]
-            x_proj = dot([rel_x, rel_y, rel_z], camera.right)
-            y_proj = dot([rel_x, rel_y, rel_z], camera.up)
-            z_proj = dot([rel_x, rel_y, rel_z], camera.forward)
-            proj_point = project_point(x_proj, y_proj, z_proj)
-            projected_points.append(proj_point if proj_point else None)
+# # rysowanie liniami
+#         for vertex in cuboid.pts:
+#             rel_x = vertex[0] - camera.pos[0] # tu minusy
+#             rel_y = vertex[1] - camera.pos[1]
+#             rel_z = vertex[2] - camera.pos[2]
+#             x_proj = dot([rel_x, rel_y, rel_z], camera.right)
+#             y_proj = dot([rel_x, rel_y, rel_z], camera.up)
+#             z_proj = dot([rel_x, rel_y, rel_z], camera.forward)
+#             proj_point = project_point(x_proj, y_proj, z_proj) 
+#             projected_points.append(proj_point)
 
-        for edge_start, edge_end in EDGES:
-            point1 = projected_points[edge_start]
-            point2 = projected_points[edge_end]
-            if point1 and point2:
-                canvas.create_line(point1[0], point1[1], point2[0], point2[1], fill=color)
 
+
+#         for edge_start, edge_end in EDGES:
+#             point1 = projected_points[edge_start]
+#             point2 = projected_points[edge_end]
+#             if point1 and point2:
+#                 canvas.create_line(point1[0], point1[1], point2[0], point2[1], fill=color)
+
+# TODO: rysowanie trójkątami
+        projected_triangles = []
+        for tri in cuboid.tris:
+            projected_points = []
+            for pt in tri.pts:
+                rel_x = pt[0] - camera.pos[0]
+                rel_y = pt[1] - camera.pos[1]
+                rel_z = pt[2] - camera.pos[2]
+                x_proj = dot([rel_x, rel_y, rel_z], camera.right)
+                y_proj = dot([rel_x, rel_y, rel_z], camera.up)
+                z_proj = dot([rel_x, rel_y, rel_z], camera.forward)
+                proj_point = project_point(x_proj, y_proj, z_proj)
+                projected_points.append(proj_point if proj_point else None)
+            projected_triangles.append(projected_points)
+
+        for tri in projected_triangles:
+            canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
     root.after(int(1000 / FPS), update)
 
 # GUI

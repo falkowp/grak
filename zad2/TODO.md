@@ -1,5 +1,6 @@
 - [x] Klasa(struktura) obiektów
-- [ ] Rysowanie trójkątów zamiast linii
+- [x] Rysowanie trójkątów zamiast linii
 - [ ] Budowanie drzewa BSP
 - [ ] Rysowanie na podstawie BSP 
 - [ ] opcjonalnie: spójrz na obroty
+- [ ] should: dosprawnić funkcję rzutowania (pz i div)
