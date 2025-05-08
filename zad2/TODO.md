@@ -1,0 +1,4 @@
+- [ ] Rysowanie trójkątów zamiast linii
+- [ ] Budowanie drzewa BSP
+- [ ] Rysowanie na podstawie BSP 
+- [ ] opcjonalnie: spójrz na obroty

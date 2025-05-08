@@ -128,12 +128,12 @@ def reset_camera():
     camera = Camera([0, 0, -5])
     camera_fov = 500
 
-def zoom(event):
-    global camera_fov
-    if event.delta > 0:
-        camera_fov = min(camera_fov + 20, 2000)
-    else:
-        camera_fov = max(camera_fov - 20, 100)
+# def zoom(event):
+#     global camera_fov
+#     if event.delta > 0:
+#         camera_fov = min(camera_fov + 20, 2000)
+#     else:
+#         camera_fov = max(camera_fov - 20, 100)
 
 def zoom_in():
     global camera_fov
@@ -160,18 +160,23 @@ def update():
     if 'e' in keys_pressed:
         camera.move(dy=-move_speed)
 
-    if 'left' in keys_pressed:
+    if 'j' in keys_pressed:
         camera.rotate(camera.up, -rotate_speed)
-    if 'right' in keys_pressed:
+    if 'l' in keys_pressed:
         camera.rotate(camera.up, rotate_speed)
-    if 'up' in keys_pressed:
+    if 'i' in keys_pressed:
         camera.rotate(camera.right, -rotate_speed)
-    if 'down' in keys_pressed:
+    if 'k' in keys_pressed:
         camera.rotate(camera.right, rotate_speed)
-    if 'z' in keys_pressed:
+    if 'u' in keys_pressed:
         camera.rotate(camera.forward, rotate_speed)
-    if 'x' in keys_pressed:
+    if 'o' in keys_pressed:
         camera.rotate(camera.forward, -rotate_speed)
+
+    if 'up' in keys_pressed:
+        zoom_in()
+    if 'down' in keys_pressed:
+        zoom_out()
 
     canvas.delete("all")
 
@@ -250,15 +255,15 @@ tk.Label(frame, text="Legenda:", font=("Arial", 12, "bold")).grid(row=12, column
 legend_text = """\
 W/S/A/D - ruch
 Q/E - góra/dół
-Strzałki - obrót 
-Z/X - roll kamery
+I/K/J/L - obrót 
+U/O - roll kamery
 Scroll - zoom
 """
 tk.Label(frame, text=legend_text, justify="left").grid(row=13, column=0, columnspan=3, pady=5)
 
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
-root.bind("<MouseWheel>", zoom)
+#root.bind("<MouseWheel>", zoom)
 
 update()
 root.mainloop()
