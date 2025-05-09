@@ -10,6 +10,7 @@ EDGES = [
     (4,5), (5,6), (6,7), (7,4),
     (0,4), (1,5), (2,6), (3,7)
 ]
+N_OBJ = 2
 
 camera_fov = 500
 
@@ -79,9 +80,9 @@ class Triangle:
 class Cuboid:
     pts = []
     tris:list
-    def __init__(self, pts):
-        self.pts = pts
-        self.tris = self.makeTris()
+    # def __init__(self, pts):
+    #     self.pts = pts
+    #     self.tris = self.makeTris()
 
     def __init__(self, cX, cY, cZ, w, l, d):
         self.pts = self.makePts(cX,cY,cZ,w,l,d)
@@ -111,16 +112,45 @@ class Cuboid:
                    Triangle((self.pts[2], self.pts[7], self.pts[3])), Triangle((self.pts[2], self.pts[6], self.pts[7]))))
         return ret
 
+def checkPosition(fc:Triangle, pt:list):
+    return 1 if dot(fc.norm, [pt[0] - fc.pts[0][0], pt[1]-fc.pts[0][1], pt[2]-fc.pts[0][2]]) >= 0 else -1
+# TODO - rozwinąć, przecięcia
 
 class BSPNode:
-    def __init__(self, val):
-        self.left = None
-        self.right = None
-        self.val = val
+    def __init__(self):
+        self.left = None    # za  - minus
+        self.right = None   # przed - plus
+        self.val = None
+    
+    def makeNode(self, faces):
+        self.val = faces.pop(0)
+        l = []; p = []
+        for face in faces:
+            chk = 0
+            for point in face.pts:
+                chk += checkPosition(self.val, point)
+            match chk:
+                case 3:
+                    p.append(face)
+                case -3:
+                    l.append(face)
+        
+        if len(l) != 0 and len(p) != 0:
+        # dalszy podział
+            self.left = BSPNode()
+            self.left.makeNode(l)
+            self.right = BSPNode()
+            self.right.makeNode(p)
+        
+        # wszystko jest "po jednej stronie", nie trzzeba nic dzielić
+        elif len(l) != 0:
+            self.left = BSPNode()
+            self.left.val = l
+        else:
+            self.right = BSPNode()
+            self.right.val = p
+            
 
-
-keys_pressed = set()
-button_action = None
 
 def project_point(px, py, pz):
     div = pz if pz > 0 else 1
@@ -134,7 +164,7 @@ def project_point(px, py, pz):
 cuboids = []
 colors = []
 
-for _ in range(5):
+for _ in range(N_OBJ):
     pos_x = random.uniform(-200, 200)
     pos_y = random.uniform(-200, 200)
     pos_z = random.uniform(-200, 200)
@@ -143,6 +173,20 @@ for _ in range(5):
     size_z = random.uniform(50, 200)
     cuboids.append(Cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z))
     colors.append("#%06x" % random.randint(0, 0xFFFFFF))
+
+def getFaces(cbs:list):
+    ret = []
+    for cb in cbs:
+        ret.extend(cb.tris)
+    return ret
+
+BSProot = BSPNode(getFaces(cuboids))
+keys_pressed = set()
+button_action = None
+
+def getBSPOrder(node:BSPNode):
+    if node.left == None and node.right == None:
+        return node.val 
 
 def key_down(event):
     keys_pressed.add(event.keysym.lower())
@@ -240,7 +284,25 @@ def update():
 #             if point1 and point2:
 #                 canvas.create_line(point1[0], point1[1], point2[0], point2[1], fill=color)
 
-# TODO: rysowanie trójkątami
+# # basic rysowanie trójkątami
+#         projected_triangles = []
+#         for tri in cuboid.tris:
+#             projected_points = []
+#             for pt in tri.pts:
+#                 rel_x = pt[0] - camera.pos[0]
+#                 rel_y = pt[1] - camera.pos[1]
+#                 rel_z = pt[2] - camera.pos[2]
+#                 x_proj = dot([rel_x, rel_y, rel_z], camera.right)
+#                 y_proj = dot([rel_x, rel_y, rel_z], camera.up)
+#                 z_proj = dot([rel_x, rel_y, rel_z], camera.forward)
+#                 proj_point = project_point(x_proj, y_proj, z_proj)
+#                 projected_points.append(proj_point if proj_point else None)
+#             projected_triangles.append(projected_points)
+
+#         for tri in projected_triangles:
+#             canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
+    
+# rysowanie z BSP
         projected_triangles = []
         for tri in cuboid.tris:
             projected_points = []
@@ -257,6 +319,8 @@ def update():
 
         for tri in projected_triangles:
             canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
+    
+
     root.after(int(1000 / FPS), update)
 
 # GUI
