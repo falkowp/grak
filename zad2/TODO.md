@@ -1,8 +1,9 @@
 - [x] Klasa(struktura) obiektów
 - [x] Rysowanie trójkątów zamiast linii
 - [x] Budowanie drzewa BSP
-- [ ] Funkcja trawersacji drzewa BSP
-- [ ] Rysowanie na podstawie BSP - dokończyć
-- [ ] podział wielokątów przecinających płaszczyzny (budowa BSP)
+- [x] Funkcja trawersacji drzewa BSP
+- [ ] Rysowanie na podstawie BSP
+- [x] podział wielokątów przecinających płaszczyzny (budowa BSP) - przypadki szczególne
+- [ ] -//- - reszta
 - [ ] opcjonalnie: spójrz na obroty
 - [ ] should: dosprawnić funkcję rzutowania (pz i div)
