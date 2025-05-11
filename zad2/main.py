@@ -159,11 +159,11 @@ class BSPNode:
                     t = getT(pts[0], pts[1], self.val[0]) #dot(self.val[0].norm, [pts[0][0] - self.val[0].pts[0][0], pts[0][1] - self.val[0].pts[0][1], pts[0][2] - self.val[0].pts[0][2]]) / dot([-1*self.val[0].norm[0], -1*self.val[0].norm[1], -1*self.val[0].norm[2]], [pts[1][0] - pts[0][0], pts[1][1] - pts[0][1], pts[1][2] - pts[0][2]])
                     nPt = [pts[0][0] + t*(pts[1][0] - pts[0][0]), pts[0][1] + t*(pts[1][1] - pts[0][1]), pts[0][2] + t*(pts[1][2] - pts[0][2])]
                     if lastOnPlane == face.pts[1]:  # przypadek specjalny (kolejny bruh)
-                        faces.append(Triangle([pts[0], lastOnPlane, nPt], self.val[0].color))
-                        faces.append(Triangle([nPt, lastOnPlane, pts[1]], self.val[0].color))
+                        faces.append(Triangle([pts[0], lastOnPlane, nPt], face.color))
+                        faces.append(Triangle([nPt, lastOnPlane, pts[1]], face.color))
                     else:
-                        faces.append(Triangle([pts[0], nPt, lastOnPlane], self.val[0].color))
-                        faces.append(Triangle([nPt, pts[1], lastOnPlane], self.val[0].color))
+                        faces.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
+                        faces.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
                 case _:
                     # dwa po jednej stronie, jeden po drugiej
                     # print("TODO - dokończ dzielenie")
@@ -178,19 +178,19 @@ class BSPNode:
                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-                        faces.extend([Triangle([face.pts[0], nPt1, nPt2], self.val[0].color), Triangle([face.pts[1], face.pts[2], nPt2], self.val[0].color), Triangle([nPt2, nPt1, face.pts[1]], self.val[0].color)])
+                        faces.extend([Triangle([face.pts[0], nPt1, nPt2], face.color), Triangle([face.pts[1], face.pts[2], nPt2], face.color), Triangle([nPt2, nPt1, face.pts[1]], face.color)])
                     elif oddOne == face.pts[1]:
                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
                         t2 = getT(face.pts[1], face.pts[2], self.val[0])
                         nPt2 = [face.pts[1][0] + t2*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t2*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t2*(face.pts[2][2] - face.pts[1][2])] 
                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
-                        faces.extend([Triangle([face.pts[2], nPt1, nPt2], self.val[0].color), Triangle([face.pts[2], face.pts[0], nPt1], self.val[0].color), Triangle([nPt2, nPt1, face.pts[1]], self.val[0].color)])
+                        faces.extend([Triangle([face.pts[2], nPt1, nPt2], face.color), Triangle([face.pts[2], face.pts[0], nPt1], face.color), Triangle([nPt2, nPt1, face.pts[1]], face.color)])
                     else:
                         t1 = getT(face.pts[1], face.pts[2], self.val[0])
                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
                         nPt1 = [face.pts[1][0] + t1*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t1*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t1*(face.pts[2][2] - face.pts[1][2])]
                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-                        faces.extend([Triangle([face.pts[1], nPt1, nPt2], self.val[0].color), Triangle([face.pts[0], face.pts[1], nPt2], self.val[0].color), Triangle([nPt2, nPt1, face.pts[2]], self.val[0].color)])
+                        faces.extend([Triangle([face.pts[1], nPt1, nPt2], face.color), Triangle([face.pts[0], face.pts[1], nPt2], face.color), Triangle([nPt2, nPt1, face.pts[2]], face.color)])
 
                         # print("TODO - chk < 0")
 
