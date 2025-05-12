@@ -2,8 +2,9 @@
 - [x] Rysowanie trójkątów zamiast linii
 - [x] Budowanie drzewa BSP
 - [x] Funkcja trawersacji drzewa BSP
-- [ ] Rysowanie na podstawie BSP
+- [x] Rysowanie na podstawie BSP
 - [x] podział wielokątów przecinających płaszczyzny (budowa BSP) - przypadki szczególne
-- [ ] -//- - reszta
+- [x] -//- - reszta
+- [ ] spojrzeć na przypadki psujące (gdy obserwator jest przy/na płaszczyźnie dzielącej)
 - [ ] opcjonalnie: spójrz na obroty
 - [ ] should: dosprawnić funkcję rzutowania (pz i div)
