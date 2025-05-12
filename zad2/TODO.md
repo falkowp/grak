@@ -5,6 +5,6 @@
 - [x] Rysowanie na podstawie BSP
 - [x] podział wielokątów przecinających płaszczyzny (budowa BSP) - przypadki szczególne
 - [x] -//- - reszta
-- [ ] spojrzeć na przypadki psujące (gdy obserwator jest przy/na płaszczyźnie dzielącej)
+- [x] spojrzeć na przypadki psujące (gdy obserwator jest przy/na płaszczyźnie dzielącej)
 - [ ] opcjonalnie: spójrz na obroty
 - [ ] should: dosprawnić funkcję rzutowania (pz i div)

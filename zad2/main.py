@@ -161,17 +161,19 @@ class BSPNode:
                 case -1:
                     l.append(face)
 
-                case 0:
-                    # wszystkie na płaszczyźnie dzielącej
-                    self.val.append(face)
 
-                case 9: #chk if abs(chk) == 0.2:
-                    # jeden punkt na płaszczyźne, dwa po róźnych stronach
+                # wszystkie na płaszczyźnie dzielącej
+                case 0:
+                    self.val.append(face)
+                
+                
+                # jeden punkt na płaszczyźne, dwa po róźnych stronach
+                case 9: 
                     pts = [x for x in face.pts if x != lastOnPlane]
                     t = getT(pts[0], pts[1], self.val[0]) 
                     nPt = [pts[0][0] + t*(pts[1][0] - pts[0][0]), pts[0][1] + t*(pts[1][1] - pts[0][1]), pts[0][2] + t*(pts[1][2] - pts[0][2])]
                     
-                    # mam to rozpisane na kartce, this works
+                    # this works, trust me
                     match lastOnPlane:
                         case x if x == face.pts[0]:
                             if lastPos == 1:
@@ -194,8 +196,11 @@ class BSPNode:
                             else:
                                 p.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
                                 l.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
+                
+
+                # dwa przed, jeden za
                 case 19:
-                    # dwa przed, jeden za
+                    # t h i s    w o r k s ,   t r u s t   m e 
                     oddOne = [x for x in face.pts if checkPosition(self.val[0], x) < 0][0]
                     if oddOne == face.pts[0]:
                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
@@ -220,8 +225,8 @@ class BSPNode:
                         p.extend([Triangle([face.pts[1], nPt1, nPt2], face.color), Triangle([face.pts[0], face.pts[1], nPt2], face.color)])
 
 
+                # dwa za, jeden przed
                 case 8:
-                        # dwa za, jeden przed
                     oddOne = [x for x in face.pts if checkPosition(self.val[0], x) > 0][0]
                     if oddOne == face.pts[0]:
                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
@@ -244,15 +249,12 @@ class BSPNode:
                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
                         p.append(Triangle([nPt2, nPt1, face.pts[2]], face.color))
                         l.extend([Triangle([face.pts[1], nPt1, nPt2], face.color), Triangle([face.pts[0], face.pts[1], nPt2], face.color)]) 
-        if len(l) != 0:
+        
         # dalszy podział
+        if len(l) != 0:
             self.left = BSPNode()
             self.left.makeNode(l)
-            # self.right = BSPNode()
-            # self.right.makeNode(p)
         
-        # wszystko jest "po jednej stronie", nie trzeba nic dzielić
-        # ^ ja w przeszłości jest idiotą, nie słuchać się go
         if len(p) != 0:
             self.right = BSPNode()
             self.right.makeNode(p)
@@ -265,18 +267,11 @@ class BSPNode:
             self.left.print(n+1, "-")    
         if(self.right != None):
             self.right.print(n+1, "+")
-     
-
-
-                    
-                   
 
 
 def project_point(px, py, pz):
     div = pz if pz > 0 else 1
-    # if pz <= 0: 
-    #   return None
-    screen_x = WIDTH / 2 + int((px * camera_fov) / div) # tu plus
+    screen_x = WIDTH / 2 + int((px * camera_fov) / div) 
     screen_y = HEIGHT / 2 - int((py * camera_fov) / div)
     return screen_x, screen_y
 
@@ -293,9 +288,6 @@ for _ in range(N_OBJ):
     size_z = random.uniform(50, 200)
     color = "#%06x" % random.randint(0, 0xFFFFFF)
     cuboids.append(Cuboid(pos_x, pos_y, pos_z, size_x, size_y, size_z, color))
-
-    # for face in cuboids[-1].tris:
-    #     face.color = color
 
 def getFaces(cbs:list):
     ret = []
@@ -334,7 +326,7 @@ def renderBSPOrder(node:BSPNode):
     if node.left == None and node.right == None:
         renderFaces(node.val)
         return
-    pos = dot(camera.pos, node.val[0].norm)
+    pos = dot(node.val[0].norm, [camera.pos[0] - node.val[0].pts[0][0], camera.pos[1] - node.val[0].pts[0][1], camera.pos[2] - node.val[0].pts[0][2]])
     if pos >= 0:
         renderBSPOrder(node.left)
         renderFaces(node.val)
@@ -343,11 +335,6 @@ def renderBSPOrder(node:BSPNode):
         renderBSPOrder(node.right)
         renderFaces(node.val)
         renderBSPOrder(node.left)
-    # TODO - pos == 0?
-    # else:
-    #     renderBSPOrder(node.left)
-    #     renderBSPOrder(node.right)
-    #     renderFaces(node.val)
     return
 
 
