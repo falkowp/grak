@@ -105,7 +105,7 @@ class Cuboid:
         ret = list()
         ret.extend((Triangle((self.pts[0], self.pts[1], self.pts[2]), self.color), Triangle((self.pts[0], self.pts[2], self.pts[3]), self.color),
                    Triangle((self.pts[2], self.pts[1], self.pts[5]), self.color), Triangle((self.pts[2], self.pts[5], self.pts[6]), self.color),
-                   Triangle((self.pts[5], self.pts[7], self.pts[6]), self.color), Triangle((self.pts[5], self.pts[4], self.pts[7]), self.color),
+                   Triangle((self.pts[5], self.pts[4], self.pts[7]), self.color), Triangle((self.pts[5], self.pts[7], self.pts[6]), self.color), 
                    Triangle((self.pts[7], self.pts[4], self.pts[0]), self.color), Triangle((self.pts[7], self.pts[0], self.pts[3]), self.color),
                    Triangle((self.pts[1], self.pts[0], self.pts[5]), self.color), Triangle((self.pts[0], self.pts[4], self.pts[5]), self.color),
                    Triangle((self.pts[2], self.pts[7], self.pts[3]), self.color), Triangle((self.pts[2], self.pts[6], self.pts[7]), self.color)))
