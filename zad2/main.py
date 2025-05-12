@@ -82,9 +82,6 @@ class Triangle:
 class Cuboid:
     pts = []
     tris:list
-    # def __init__(self, pts):
-    #     self.pts = pts
-    #     self.tris = self.makeTris()
 
     def __init__(self, cX, cY, cZ, w, l, d, color):
         self.color = color
