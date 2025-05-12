@@ -75,7 +75,6 @@ class Triangle:
         w1 = [self.pts[2][0] - self.pts[1][0], self.pts[2][1] - self.pts[1][1], self.pts[2][2] - self.pts[1][2]]
         
         return [w0[1]*w1[2] - w0[2]*w1[1], -1*(w0[0]*w1[2] - w0[2]*w1[0]), w0[0]*w1[1] - w0[1]*w1[0]]    
-        # wyjęte z zeszytu z algebry xD
     
     
 
@@ -101,8 +100,7 @@ class Cuboid:
             [cX + w2, cY + l2, cZ + d2],
             [cX - w2, cY + l2, cZ + d2],
         ]
-    
-    # lista trójkątów w bryle - po 2 na ścianę (kolejność istotna). Ważne dla BSP
+
     def makeTris(self):
         ret = list()
         ret.extend((Triangle((self.pts[0], self.pts[1], self.pts[2]), self.color), Triangle((self.pts[0], self.pts[2], self.pts[3]), self.color),
@@ -116,7 +114,6 @@ class Cuboid:
 def checkPosition(fc:Triangle, pt:list):
     ret = dot(fc.norm, [pt[0] - fc.pts[0][0], pt[1]-fc.pts[0][1], pt[2]-fc.pts[0][2]])
     return 10 if ret > 0 else -1 if ret < 0 else 0
-# TODO - rozwinąć, przecięcia
 
 def getT(p0:list, p1:list, fc:Triangle):
     return dot(fc.norm, [p0[0] - fc.pts[0][0], p0[1] - fc.pts[0][1], p0[2] - fc.pts[0][2]]) / dot([-1*fc.norm[0], -1*fc.norm[1], -1*fc.norm[2]], [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]])
@@ -169,8 +166,6 @@ class BSPNode:
                     pts = [x for x in face.pts if x != lastOnPlane]
                     t = getT(pts[0], pts[1], self.val[0]) 
                     nPt = [pts[0][0] + t*(pts[1][0] - pts[0][0]), pts[0][1] + t*(pts[1][1] - pts[0][1]), pts[0][2] + t*(pts[1][2] - pts[0][2])]
-                    
-                    # this works, trust me
                     match lastOnPlane:
                         case x if x == face.pts[0]:
                             if lastPos == 1:
@@ -197,7 +192,6 @@ class BSPNode:
 
                 # dwa przed, jeden za
                 case 19:
-                    # t h i s    w o r k s ,   t r u s t   m e 
                     oddOne = [x for x in face.pts if checkPosition(self.val[0], x) < 0][0]
                     if oddOne == face.pts[0]:
                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
@@ -414,9 +408,6 @@ def update():
     root.after(int(1000 / FPS), update)
 
 # GUI
-
-# BSProot.print(0, "")
-
 root = tk.Tk()
 root.title("Kamera 3D")
 
@@ -478,7 +469,6 @@ tk.Label(frame, text=legend_text, justify="left").grid(row=13, column=0, columns
 
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
-#root.bind("<MouseWheel>", zoom)
 
 update()
 root.mainloop()
