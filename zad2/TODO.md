@@ -7,4 +7,4 @@
 - [x] -//- - reszta
 - [x] spojrzeć na przypadki psujące (gdy obserwator jest przy/na płaszczyźnie dzielącej)
 - [ ] opcjonalnie: spójrz na obroty
-- [ ] should: dosprawnić funkcję rzutowania (pz i div)
+- [x] should: pobawić się z funkcją rzutowania (pz i div)
