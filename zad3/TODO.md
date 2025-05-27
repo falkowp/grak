@@ -1,0 +1,5 @@
+- [ ] Renderowanie ekranu
+- [ ] Imlpementacja funkcji Phonga
+- [ ] Cztery kule
+- [ ] Źródło światła
+- [ ] 

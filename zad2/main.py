@@ -409,7 +409,7 @@ def update():
 
 # GUI
 root = tk.Tk()
-root.title("Kamera 3D")
+root.title("Kamera 3D - Elim. Elem. Zasł.")
 
 frame = tk.Frame(root)
 frame.pack(side="right", fill="y", padx=10, pady=10)
