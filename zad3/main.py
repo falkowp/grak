@@ -4,10 +4,10 @@ import random
 import time
 
 
-PI_DIV = 30
+PI_DIV = 20
 WIDTH = 800
 HEIGHT = 600
-FPS = 60
+FPS = 30 # 60
 EDGES = [
     (0,1), (1,2), (2,3), (3,0),
     (4,5), (5,6), (6,7), (7,4),
@@ -65,7 +65,8 @@ class Camera:
         self.right = normalize(rotate_vector(self.right, axis, angle_deg))
         self.up = normalize(cross(self.forward, self.right))
 
-light_source = Camera([0, 0, -5])
+light_source = Camera([0, 0, 0])
+camera = Camera([0,0,-5])
 
 
 class Triangle:
@@ -89,15 +90,14 @@ class Ball:
         self.makePoints()
         self.makeFaces()
         
-    
     def makePoints(self):
         self.pts = []
         fi = math.pi
         rad = self.radius
-        while(fi<=2*math.pi):
+        while(round(fi, 2)<=2*math.pi):
             sF = math.sin(fi); cF = math.cos(fi)
             th = 0
-            while(th<=math.pi):
+            while(round(th, 2)<math.pi):
                 sT = math.sin(th); cT = math.cos(th)
                 self.pts.append([rad*cF*sT+ self.center[0], 
                                     rad*cT+ self.center[1],
@@ -108,14 +108,11 @@ class Ball:
     
     def makeFaces(self):
         self.faces = []
-        for i in range(PI_DIV):
-            for j in range(PI_DIV-1):
+        for j in range(PI_DIV+1):
+            for i in range(PI_DIV):
                 self.faces.extend([Triangle([self.pts[i+j*PI_DIV], self.pts[i+(j+1)*PI_DIV], self.pts[i+1+j*PI_DIV]], self.color),
                                    Triangle([self.pts[i+(j+1)*PI_DIV], self.pts[i+1+(j+1)*PI_DIV], self.pts[i+1+j*PI_DIV]], self.color)])
             
-
-
-
 
 
 class Cuboid:
@@ -188,17 +185,12 @@ keys_pressed = set()
 button_action = None
 
 def renderFaces(faces:list):
+    global camera
     projected_triangles = []; colors = []
     for tri in faces:
         projected_points = []
-        for pt in tri.pts:
-            rel_x = pt[0] #- light_source.pos[0]
-            rel_y = pt[1] #- light_source.pos[1]
-            rel_z = pt[2] #- light_source.pos[2]
-            # x_proj = dot([rel_x, rel_y, rel_z], light_source.right)
-            # y_proj = dot([rel_x, rel_y, rel_z], light_source.up)
-            # z_proj = dot([rel_x, rel_y, rel_z], light_source.forward)
-            proj_point = project_point(rel_x, rel_y, rel_z)
+        for pt in tri.pts: 
+            proj_point = project_point(pt[0] - camera.pos[0], pt[1] - camera.pos[1], pt[2] - camera.pos[2])
             projected_points.append(proj_point if proj_point else None)
         projected_triangles.append(projected_points)
         colors.append(tri.color)
@@ -206,6 +198,7 @@ def renderFaces(faces:list):
     for tri, color in zip(projected_triangles, colors):
         canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
 
+# to throw out
 def ftoh(a:float):
     if a < 0:
         return "#000000"
@@ -214,30 +207,12 @@ def ftoh(a:float):
 
 
 def renderBall(ball:Ball):
-    # fi = math.pi
-    # goal = math.pi
-    # rad = ball.radius
-    # top = [0, ball.radius, 0]
-    # while(fi<2*goal):
-    #     sF = math.sin(fi); cF = math.cos(fi)
-    #     th = 0
-    #     while(th<goal):
-    #         sT = math.sin(th); cT = math.cos(th)
-    #         # ptX, ptY = project_point(rad*sT*cF+ball.center[0], rad*sT*sF+ball.center[1], rad*cT+ball.center[2])
-    #         z = top[1] * sF * sT + ball.center[2]
-    #         clr = ftoh(sF * sT)
-    #         ptX, ptY = project_point(top[1]*cF*sT+ ball.center[0], #top[0]*cT + top[1]*sF*sT + top[2]*sT*cF, 
-    #                              top[1]*cT+ ball.center[1],# - top[2]*sF,
-    #                              z)#top[0]*sT + top[1]*sF*cT + top[2]*cT*cF)
-    #         canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill=clr)
-    #         th += math.pi/30
-    #     fi += math.pi/30
-
     renderFaces(ball.faces)
 
-    for pt in ball.pts:
-        ptX, ptY = project_point(pt[0], pt[1], pt[2])
-        canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill="#ffffff")
+    # # to throw out
+    # for pt in ball.pts:
+    #     ptX, ptY = project_point(pt[0] - camera.pos[0], pt[1] - camera.pos[1], pt[2] - camera.pos[2])
+    #     canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill="#ffffff")
     return 
 
 
@@ -263,11 +238,10 @@ def do_move():
 
 def reset_camera():
     global light_source
-    global camera_fov
     light_source = Camera([0, 0, -5])
-    camera_fov = 500
 
-balll = Ball([0,0,2], 1, "#000099")
+balls = [Ball([-3,3,5], 1, "#000099"), Ball([-3,-3,5], 1, "#009900"), 
+         Ball([3,3,5], 1, "#990000"), Ball([3,-3,5], 1, "#555555")]
 
 
 
@@ -281,39 +255,37 @@ def update():
     move_speed = 10
     rotate_speed = 2
 
-    if 'w' in keys_pressed:
-        light_source.move(dz=move_speed)
-    if 's' in keys_pressed:
-        light_source.move(dz=-move_speed)
-    if 'a' in keys_pressed:
-        light_source.move(dx=-move_speed)
-    if 'd' in keys_pressed:
-        light_source.move(dx=move_speed)
-    if 'q' in keys_pressed:
-        light_source.move(dy=move_speed)
-    if 'e' in keys_pressed:
-        light_source.move(dy=-move_speed)
+    if len(keys_pressed) == 0:
+        root.after(int(1000 / FPS), update)
 
-    if 'escape' in keys_pressed:
-        root.quit()
+    else:
 
-    canvas.delete("all")
+        if 'w' in keys_pressed:
+            light_source.move(dz=move_speed)
+        if 's' in keys_pressed:
+            light_source.move(dz=-move_speed)
+        if 'a' in keys_pressed:
+            light_source.move(dx=-move_speed)
+        if 'd' in keys_pressed:
+            light_source.move(dx=move_speed)
+        if 'q' in keys_pressed:
+            light_source.move(dy=move_speed)
+        if 'e' in keys_pressed:
+            light_source.move(dy=-move_speed)
 
-    renderBall(balll)
-
-    cords_update()
-
-    # time.sleep(1)
-
-    
-
-    # canvas.create_oval(100,200,102,202,fill="#aaaaaa")
+        if 'escape' in keys_pressed:
+            root.quit()
 
 
+        canvas.delete("all")
 
-    # renderBSPOrder(BSProot)    
+        
+        for ball in balls:
+            renderBall(ball)
 
-    root.after(int(1000 / FPS), update)
+        cords_update()
+
+        root.after(int(1000 / FPS), update)
 
 # GUI
 root = tk.Tk()
@@ -346,25 +318,8 @@ create_move_button(2, 2, "→", lambda: light_source.move(dx=1))
 create_move_button(1, 0, "⤒", lambda: light_source.move(dy=1))
 create_move_button(1, 2, "⤓", lambda: light_source.move(dy=-1))
 
-tk.Label(frame, text="Obrót kamery", font=("Arial", 12, "bold")).grid(row=4, column=0, columnspan=3, pady=10)
-
-create_move_button(5, 0, "↻ w prawo", lambda: light_source.rotate(light_source.up, 5))
-create_move_button(5, 2, "↺ w lewo", lambda: light_source.rotate(light_source.up, -5))
-create_move_button(6, 0, "↥ w górę", lambda: light_source.rotate(light_source.right, -5))
-create_move_button(6, 2, "↧ w dół", lambda: light_source.rotate(light_source.right, 5))
-create_move_button(7, 0, "↻ roll prawo", lambda: light_source.rotate(light_source.forward, 5))
-create_move_button(7, 2, "↺ roll lewo", lambda: light_source.rotate(light_source.forward, -5))
-
 btn_reset = tk.Button(frame, text="Reset Kamery", font=("Arial", 14), command=reset_camera)
 btn_reset.grid(row=8, column=0, columnspan=3, pady=10)
-
-tk.Label(frame, text="Zoom", font=("Arial", 12, "bold")).grid(row=9, column=0, columnspan=3, pady=10)
-
-def create_zoom_button(row, text, action):
-    btn = tk.Button(frame, text=text, font=("Arial", 12))
-    btn.grid(row=row, column=0, columnspan=3, pady=2)
-    btn.bind("<ButtonPress-1>", lambda e: start_moving(action))
-    btn.bind("<ButtonRelease-1>", lambda e: stop_moving())
 
 
 # Legenda
@@ -381,6 +336,11 @@ tk.Label(frame, text=legend_text, justify="left").grid(row=13, column=0, columns
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
 
+
+for ball in balls:
+    renderBall(ball)
+
+cords_update()
 
 
 update()
