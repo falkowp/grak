@@ -3,6 +3,8 @@ import math
 import random
 import time
 
+
+PI_DIV = 30
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
@@ -65,14 +67,6 @@ class Camera:
 
 light_source = Camera([0, 0, -5])
 
-class Ball:
-    def __init__(self, cent, rad):#, color):
-        self.center = cent
-        self.radius = rad
-        # self.color = color
-    
-    # def makePoints(self):
-
 
 class Triangle:
     def __init__(self, pts:list[3], color):
@@ -87,6 +81,42 @@ class Triangle:
         return [w0[1]*w1[2] - w0[2]*w1[1], -1*(w0[0]*w1[2] - w0[2]*w1[0]), w0[0]*w1[1] - w0[1]*w1[0]]    
     
     
+class Ball:
+    def __init__(self, cent, rad, color):
+        self.center = cent
+        self.radius = rad
+        self.color = color
+        self.makePoints()
+        self.makeFaces()
+        
+    
+    def makePoints(self):
+        self.pts = []
+        fi = math.pi
+        rad = self.radius
+        while(fi<=2*math.pi):
+            sF = math.sin(fi); cF = math.cos(fi)
+            th = 0
+            while(th<=math.pi):
+                sT = math.sin(th); cT = math.cos(th)
+                self.pts.append([rad*cF*sT+ self.center[0], 
+                                    rad*cT+ self.center[1],
+                                    rad* sF * sT + self.center[2]])
+                th += math.pi/PI_DIV
+            fi += math.pi/PI_DIV
+        return 
+    
+    def makeFaces(self):
+        self.faces = []
+        for i in range(PI_DIV):
+            for j in range(PI_DIV-1):
+                self.faces.extend([Triangle([self.pts[i+j*PI_DIV], self.pts[i+(j+1)*PI_DIV], self.pts[i+1+j*PI_DIV]], self.color),
+                                   Triangle([self.pts[i+(j+1)*PI_DIV], self.pts[i+1+(j+1)*PI_DIV], self.pts[i+1+j*PI_DIV]], self.color)])
+            
+
+
+
+
 
 class Cuboid:
     pts = []
@@ -129,148 +159,6 @@ def getT(p0:list, p1:list, fc:Triangle):
     return dot(fc.norm, [p0[0] - fc.pts[0][0], p0[1] - fc.pts[0][1], p0[2] - fc.pts[0][2]]) / dot([-1*fc.norm[0], -1*fc.norm[1], -1*fc.norm[2]], [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]])
 
 
-# class BSPNode:
-#     def __init__(self):
-#         self.left = None    # za  - minus
-#         self.right = None   # przed - plus
-#         self.val = []
-    
-#     def makeNode(self, faces):
-#         self.val.append(faces.pop(0))
-#         l = []; p = []
-#         for face in faces:
-#             chk = 0
-#             lastOnPlane = None
-#             lastPos = -1
-#             for point in face.pts:
-#                 sum = checkPosition(self.val[0], point)
-#                 lastPos = face.pts.index(point) if sum == 1.2 else -1
-#                 lastOnPlane = point if sum != 0 else None
-#                 chk += sum
-#             match chk:
-#                 case 30:
-#                     # wszystkie "przed"
-#                     p.append(face)
-#                 case 20:
-#                     # 2 "przed" i 1 na płaszczyźnie dzielącej 
-#                     p.append(face)
-#                 case 10:
-#                     # 1 "przed" i 2 na dzielącej 
-#                     p.append(face)
-
-#                 # jak wyżej tylko "za"
-#                 case -3:
-#                     l.append(face)
-#                 case -2:
-#                     l.append(face)
-#                 case -1:
-#                     l.append(face)
-
-
-#                 # wszystkie na płaszczyźnie dzielącej
-#                 case 0:
-#                     self.val.append(face)
-                
-                
-#                 # jeden punkt na płaszczyźne, dwa po róźnych stronach
-#                 case 9: 
-#                     pts = [x for x in face.pts if x != lastOnPlane]
-#                     t = getT(pts[0], pts[1], self.val[0]) 
-#                     nPt = [pts[0][0] + t*(pts[1][0] - pts[0][0]), pts[0][1] + t*(pts[1][1] - pts[0][1]), pts[0][2] + t*(pts[1][2] - pts[0][2])]
-#                     match lastOnPlane:
-#                         case x if x == face.pts[0]:
-#                             if lastPos == 1:
-#                                 l.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
-#                                 p.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
-#                             else:
-#                                 p.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
-#                                 l.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
-#                         case x if x == face.pts[1]:
-#                             if lastPos == 0:
-#                                 p.append(Triangle([pts[0], lastOnPlane, nPt], face.color))
-#                                 l.append(Triangle([nPt, lastOnPlane, pts[1]], face.color))
-#                             else:
-#                                 l.append(Triangle([pts[0], lastOnPlane, nPt], face.color))
-#                                 p.append(Triangle([nPt, lastOnPlane, pts[1]], face.color))
-#                         case x if x == face.pts[2]:
-#                             if lastPos == 0:
-#                                 l.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
-#                                 p.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
-#                             else:
-#                                 p.append(Triangle([nPt, pts[1], lastOnPlane], face.color))
-#                                 l.append(Triangle([pts[0], nPt, lastOnPlane], face.color))
-                
-
-#                 # dwa przed, jeden za
-#                 case 19:
-#                     oddOne = [x for x in face.pts if checkPosition(self.val[0], x) < 0][0]
-#                     if oddOne == face.pts[0]:
-#                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
-#                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
-#                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
-#                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-#                         l.append(Triangle([face.pts[0], nPt1, nPt2], face.color))
-#                         p.extend([Triangle([face.pts[1], face.pts[2], nPt2], face.color), Triangle([nPt2, nPt1, face.pts[1]], face.color)])
-#                     elif oddOne == face.pts[1]:
-#                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
-#                         t2 = getT(face.pts[1], face.pts[2], self.val[0])
-#                         nPt2 = [face.pts[1][0] + t2*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t2*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t2*(face.pts[2][2] - face.pts[1][2])] 
-#                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
-#                         l.append(Triangle([nPt2, nPt1, face.pts[1]], face.color))
-#                         p.extend([Triangle([face.pts[2], nPt1, nPt2], face.color), Triangle([face.pts[2], face.pts[0], nPt1], face.color)])
-#                     else:
-#                         t1 = getT(face.pts[1], face.pts[2], self.val[0])
-#                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
-#                         nPt1 = [face.pts[1][0] + t1*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t1*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t1*(face.pts[2][2] - face.pts[1][2])]
-#                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-#                         l.append(Triangle([nPt2, nPt1, face.pts[2]], face.color))
-#                         p.extend([Triangle([face.pts[1], nPt1, nPt2], face.color), Triangle([face.pts[0], face.pts[1], nPt2], face.color)])
-
-
-#                 # dwa za, jeden przed
-#                 case 8:
-#                     oddOne = [x for x in face.pts if checkPosition(self.val[0], x) > 0][0]
-#                     if oddOne == face.pts[0]:
-#                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
-#                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
-#                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
-#                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-#                         p.append(Triangle([face.pts[0], nPt1, nPt2], face.color))
-#                         l.extend([Triangle([face.pts[1], face.pts[2], nPt2], face.color), Triangle([nPt2, nPt1, face.pts[1]], face.color)])
-#                     elif oddOne == face.pts[1]:
-#                         t1 = getT(face.pts[0], face.pts[1], self.val[0])
-#                         t2 = getT(face.pts[1], face.pts[2], self.val[0])
-#                         nPt2 = [face.pts[1][0] + t2*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t2*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t2*(face.pts[2][2] - face.pts[1][2])] 
-#                         nPt1 = [face.pts[0][0] + t1*(face.pts[1][0] - face.pts[0][0]), face.pts[0][1] + t1*(face.pts[1][1] - face.pts[0][1]), face.pts[0][2] + t1*(face.pts[1][2] - face.pts[0][2])]
-#                         p.append(Triangle([nPt2, nPt1, face.pts[1]], face.color))
-#                         l.extend([Triangle([face.pts[2], nPt1, nPt2], face.color), Triangle([face.pts[2], face.pts[0], nPt1], face.color)])
-#                     else:
-#                         t1 = getT(face.pts[1], face.pts[2], self.val[0])
-#                         t2 = getT(face.pts[2], face.pts[0], self.val[0])
-#                         nPt1 = [face.pts[1][0] + t1*(face.pts[2][0] - face.pts[1][0]), face.pts[1][1] + t1*(face.pts[2][1] - face.pts[1][1]), face.pts[1][2] + t1*(face.pts[2][2] - face.pts[1][2])]
-#                         nPt2 = [face.pts[2][0] + t2*(face.pts[0][0] - face.pts[2][0]), face.pts[2][1] + t2*(face.pts[0][1] - face.pts[2][1]), face.pts[2][2] + t2*(face.pts[0][2] - face.pts[2][2])] 
-#                         p.append(Triangle([nPt2, nPt1, face.pts[2]], face.color))
-#                         l.extend([Triangle([face.pts[1], nPt1, nPt2], face.color), Triangle([face.pts[0], face.pts[1], nPt2], face.color)]) 
-        
-#         # dalszy podział
-#         if len(l) != 0:
-#             self.left = BSPNode()
-#             self.left.makeNode(l)
-        
-#         if len(p) != 0:
-#             self.right = BSPNode()
-#             self.right.makeNode(p)
-    
-#     def print(self, n:int, c):
-#         for _ in range(n):
-#             print(c, end="")
-#         print(self.val[0].pts)
-#         if(self.left != None):
-#             self.left.print(n+1, "-")    
-#         if(self.right != None):
-#             self.right.print(n+1, "+")
-
-
 def project_point(px, py, pz):
     div = pz if pz > 0 else 1
     screen_x = WIDTH / 2 + int((px * camera_fov) / div) 
@@ -296,9 +184,6 @@ def getFaces(cbs:list):
         ret.extend(cb.tris)
     return ret
 
-# BSProot = BSPNode()
-# allFaces = getFaces(cuboids)
-# BSProot.makeNode(allFaces)
 keys_pressed = set()
 button_action = None
 
@@ -307,13 +192,13 @@ def renderFaces(faces:list):
     for tri in faces:
         projected_points = []
         for pt in tri.pts:
-            rel_x = pt[0] - light_source.pos[0]
-            rel_y = pt[1] - light_source.pos[1]
-            rel_z = pt[2] - light_source.pos[2]
-            x_proj = dot([rel_x, rel_y, rel_z], light_source.right)
-            y_proj = dot([rel_x, rel_y, rel_z], light_source.up)
-            z_proj = dot([rel_x, rel_y, rel_z], light_source.forward)
-            proj_point = project_point(x_proj, y_proj, z_proj)
+            rel_x = pt[0] #- light_source.pos[0]
+            rel_y = pt[1] #- light_source.pos[1]
+            rel_z = pt[2] #- light_source.pos[2]
+            # x_proj = dot([rel_x, rel_y, rel_z], light_source.right)
+            # y_proj = dot([rel_x, rel_y, rel_z], light_source.up)
+            # z_proj = dot([rel_x, rel_y, rel_z], light_source.forward)
+            proj_point = project_point(rel_x, rel_y, rel_z)
             projected_points.append(proj_point if proj_point else None)
         projected_triangles.append(projected_points)
         colors.append(tri.color)
@@ -322,45 +207,38 @@ def renderFaces(faces:list):
         canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
 
 def ftoh(a:float):
-    return "#"+3*str(hex(int(a*255)))[2:]
+    if a < 0:
+        return "#000000"
+    else:
+        return "#"+3*str(hex(int(a*255)))[2:]
 
 
 def renderBall(ball:Ball):
-    fi = 0
-    goal = math.pi
-    rad = ball.radius
+    # fi = math.pi
+    # goal = math.pi
+    # rad = ball.radius
     # top = [0, ball.radius, 0]
-    while(fi<goal):
-        clr = fi/math.pi/2
-        sF = math.sin(fi); cF = math.cos(fi)
-        th = 0
-        while(th<2*goal):
-            sT = math.sin(th); cT = math.cos(th)
-            ptX, ptY = project_point(rad*sT*cF+ball.center[0], rad*sT*sF+ball.center[1], rad*cT+ball.center[2])
-            # prPtX, prPtY = project_point(top[1]*cF*sT+ ball.center[0], #top[0]*cT + top[1]*sF*sT + top[2]*sT*cF, 
-            #                      top[1]*cT+ ball.center[1],# - top[2]*sF,
-            #                      top[1]*sF*sT+ ball.center[2])#top[0]*sT + top[1]*sF*cT + top[2]*cT*cF)
-            canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill=(ftoh(clr)))
-            th += math.pi/30
-        fi += math.pi/30
-    return 
+    # while(fi<2*goal):
+    #     sF = math.sin(fi); cF = math.cos(fi)
+    #     th = 0
+    #     while(th<goal):
+    #         sT = math.sin(th); cT = math.cos(th)
+    #         # ptX, ptY = project_point(rad*sT*cF+ball.center[0], rad*sT*sF+ball.center[1], rad*cT+ball.center[2])
+    #         z = top[1] * sF * sT + ball.center[2]
+    #         clr = ftoh(sF * sT)
+    #         ptX, ptY = project_point(top[1]*cF*sT+ ball.center[0], #top[0]*cT + top[1]*sF*sT + top[2]*sT*cF, 
+    #                              top[1]*cT+ ball.center[1],# - top[2]*sF,
+    #                              z)#top[0]*sT + top[1]*sF*cT + top[2]*cT*cF)
+    #         canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill=clr)
+    #         th += math.pi/30
+    #     fi += math.pi/30
 
-# def renderBSPOrder(node:BSPNode):
-#     if node == None:
-#         return
-#     if node.left == None and node.right == None:
-#         renderFaces(node.val)
-#         return
-#     pos = dot(node.val[0].norm, [camera.pos[0] - node.val[0].pts[0][0], camera.pos[1] - node.val[0].pts[0][1], camera.pos[2] - node.val[0].pts[0][2]])
-#     if pos >= 0:
-#         renderBSPOrder(node.left)
-#         renderFaces(node.val)
-#         renderBSPOrder(node.right)
-#     elif pos < 0:
-#         renderBSPOrder(node.right)
-#         renderFaces(node.val)
-#         renderBSPOrder(node.left)
-#     return
+    renderFaces(ball.faces)
+
+    for pt in ball.pts:
+        ptX, ptY = project_point(pt[0], pt[1], pt[2])
+        canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill="#ffffff")
+    return 
 
 
 def key_down(event):
@@ -389,7 +267,7 @@ def reset_camera():
     light_source = Camera([0, 0, -5])
     camera_fov = 500
 
-balll = Ball([0,0,10], 1)
+balll = Ball([0,0,2], 1, "#000099")
 
 
 
