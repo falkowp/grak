@@ -1,6 +1,7 @@
 import tkinter as tk
 import math
 import random
+import time
 
 WIDTH = 800
 HEIGHT = 600
@@ -65,10 +66,10 @@ class Camera:
 light_source = Camera([0, 0, -5])
 
 class Ball:
-    def __init__(self, cent, rad, color):
+    def __init__(self, cent, rad):#, color):
         self.center = cent
         self.radius = rad
-        self.color = color
+        # self.color = color
     
     # def makePoints(self):
 
@@ -276,7 +277,6 @@ def project_point(px, py, pz):
     screen_y = HEIGHT / 2 - int((py * camera_fov) / div)
     return screen_x, screen_y
 
-
 cuboids = []
 colors = []
 
@@ -320,6 +320,30 @@ def renderFaces(faces:list):
 
     for tri, color in zip(projected_triangles, colors):
         canvas.create_polygon(tri[0][0], tri[0][1], tri[1][0], tri[1][1], tri[2][0], tri[2][1], fill=color)
+
+def ftoh(a:float):
+    return "#"+3*str(hex(int(a*255)))[2:]
+
+
+def renderBall(ball:Ball):
+    fi = 0
+    goal = math.pi
+    rad = ball.radius
+    # top = [0, ball.radius, 0]
+    while(fi<goal):
+        clr = fi/math.pi/2
+        sF = math.sin(fi); cF = math.cos(fi)
+        th = 0
+        while(th<2*goal):
+            sT = math.sin(th); cT = math.cos(th)
+            ptX, ptY = project_point(rad*sT*cF+ball.center[0], rad*sT*sF+ball.center[1], rad*cT+ball.center[2])
+            # prPtX, prPtY = project_point(top[1]*cF*sT+ ball.center[0], #top[0]*cT + top[1]*sF*sT + top[2]*sT*cF, 
+            #                      top[1]*cT+ ball.center[1],# - top[2]*sF,
+            #                      top[1]*sF*sT+ ball.center[2])#top[0]*sT + top[1]*sF*cT + top[2]*cT*cF)
+            canvas.create_oval(ptX-1, ptY-1, ptX+1, ptY+1, fill=(ftoh(clr)))
+            th += math.pi/30
+        fi += math.pi/30
+    return 
 
 # def renderBSPOrder(node:BSPNode):
 #     if node == None:
@@ -365,6 +389,10 @@ def reset_camera():
     light_source = Camera([0, 0, -5])
     camera_fov = 500
 
+balll = Ball([0,0,10], 1)
+
+
+
 def cords_update():
     # text.config(state="normal")
     # text.insert("end", "X: "+ str(light_source.pos[0]) + " Y: " + str(light_source.pos[1]) + " Z: " + str(light_source.pos[2]) +"\n")
@@ -393,9 +421,17 @@ def update():
 
     canvas.delete("all")
 
+    renderBall(balll)
+
     cords_update()
 
-    canvas.create_oval(100,200,102,202,fill="#aaaaaa")
+    # time.sleep(1)
+
+    
+
+    # canvas.create_oval(100,200,102,202,fill="#aaaaaa")
+
+
 
     # renderBSPOrder(BSProot)    
 
@@ -466,6 +502,8 @@ tk.Label(frame, text=legend_text, justify="left").grid(row=13, column=0, columns
 
 root.bind("<KeyPress>", key_down)
 root.bind("<KeyRelease>", key_up)
+
+
 
 update()
 root.mainloop()
