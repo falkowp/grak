@@ -49,7 +49,7 @@ class Ball:
 light_source = LSource([0, 0, 1000], [1.0, 1.0, 1.0])
 light_source.setImage("zad3/sun.png")
 
-balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 32, (0.7, 0, 0.7))]
+balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 64, (0.7, 0, 0.7))]
 ball_surfs = []
 
 def ftoc(a:float):
@@ -74,9 +74,8 @@ def update():
         if pg.K_q in keys_pressed:
             light_source.move(dy=-move_speed)
         if pg.K_ESCAPE in keys_pressed:
-            pg.quit()
-
-
+            return 
+        
         global ball_surfs, balls
         ball_surfs = []
         for ball in balls:
@@ -100,20 +99,22 @@ def update():
                                 mN = x
 
                         normal = [x/mN if mN != 0 else 0 for x in [i,j,z]]
+                        print(normal)
 
                         # diffuse
+                        # spójrz tu na normalną
                         tmp = max(0.0, dot([light_dir[0], light_dir[1], light_dir[2]], normal))
                         diff = [tmp*light_source.color[0], tmp*light_source.color[1], tmp*light_source.color[2]]
 
                         # specular
                         
-                        cT = dot(normal, L) / (vlen(normal) *vlen(L))
-                        V = [L[0] - 2 * normal[0]*cT, L[1]-2*normal[1]*cT,L[2]-2*normal[2]*cT]
-                        cA = max(0.0, dot(V, [0.0,0.0,1.0]) / (vlen(V)))**(ball.n)
+                        cT = dot(normal, light_dir) / (vlen(normal) *vlen(light_dir)) #L
+                        V = [light_dir[0] - 2 * normal[0]*cT, light_dir[1]-2*normal[1]*cT,light_dir[2]-2*normal[2]*cT]
+                        cA = max(0.0, (dot(V, [0.0,0.0,-1.0]) / (vlen(V))))**(ball.n)
                         spec = [cA*light_source.color[0], cA*light_source.color[1], cA*light_source.color[2]]
 
                         # suma
-                        clr = [ftoc(color*0.0 + df*0.0 + sp) for (color, df, sp) in zip(ball.color, diff, spec)]
+                        clr = [ftoc(color*0.3+ df*0.7 + 0.0*sp) for (color, df, sp) in zip(ball.color, diff, spec)]
                         pg.draw.circle(ball_surf, clr, (i+ball.radius,j+ball.radius), 2)
 
             ball_surfs.append((ball_surf, (ball.start[0], ball.start[1])))
@@ -131,16 +132,17 @@ while running:
         screen.blit(light_source.img, (light_source.pos[0]-15, light_source.pos[1]-15))
     pg.display.flip()
 
+    update()            
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
         if event.type == pg.KEYDOWN:
+            # if event.key == pg.K_ESCAPE:
             keys_pressed.add(event.key)
         if event.type == pg.KEYUP:
             keys_pressed.remove(event.key)
 
-    update()            
     clock.tick(60)
 
 pg.quit()
