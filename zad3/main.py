@@ -33,11 +33,7 @@ class LSource:
         self.forward = [0, 0, 1]
         self.right = [1, 0, 0]
         self.up = [0, 1, 0]
-    def move(self, dx=0.0, dy=0.0, dz=0.0):
-        for i in range(3):
-            self.pos[i] += self.right[i] * dx
-            self.pos[i] += self.up[i] * dy
-            self.pos[i] += self.forward[i] * dz
+        # self.fatt = 1.0
     def setImage(self, path):
         self.img = pg.transform.scale(pg.image.load(path), (30,30))
     def move(self, dx=0.0, dy=0.0, dz=0.0):
@@ -45,6 +41,10 @@ class LSource:
             self.pos[i] += self.right[i] * dx
             self.pos[i] += self.up[i] * dy
             self.pos[i] += self.forward[i] * dz
+        # if self.pos[2] == 0 or -10:
+        #     self.fatt = 1
+        # else:
+        #     self.fatt = 2*self.pos[2]/(self.pos[2]**2)
     
 class Ball:
     def __init__(self, cent, rad, n, color):
@@ -98,6 +98,7 @@ def update():
                         jB = j + ball.radius
                         # basics
                         z = math.sqrt((ball.radius)**2 - i**2 - j**2)
+
                         # to powinno mieć dużo sensu
                         L = [(light_source.pos[0] - ball.start[0]) - iB, (light_source.pos[1] - ball.start[1]) - jB, light_source.pos[2] - z]# - z-ball.start[0]]#-ball.radius]
 
@@ -107,21 +108,19 @@ def update():
                         
                         # diffuse
                         # spójrz tu na normalną
-                        tmp = dot(normal, light_dir) # dNL
-                        # tmp = max(0.0, dNL)
+                        tmp = dot(normal, light_dir) 
 
                         diff = [tmp*light_source.color[0], tmp*light_source.color[1], tmp*light_source.color[2]]
 
                         # specular
-                        cT = tmp / (vN *vL) #dNL
+                        cT = tmp / (vN *vL) 
                         R, vR = normalize([light_dir[0] - 2 * normal[0]*cT, light_dir[1]-2*normal[1]*cT,light_dir[2]-2*normal[2]*cT])
-                        # cA = max(0.0, (dot(V, [0.0,0.0,1.0]) / vN))**(ball.n)
                         V, vV = normalize([W2 - ball.start[0] - iB, H2 - ball.start[1] - jB , z - 1000])
                         cA = dot(R, V)**(ball.n)
                         spec = [cA*light_source.color[0], cA*light_source.color[1], cA*light_source.color[2]]
 
                         # suma
-                        clr = [ftoc(color*0.2 + df*0.25 + 0.75*sp) for (color, df, sp) in zip(ball.color, diff, spec)]
+                        clr = [ftoc(color*0.2 + light_source.fatt*df*0.25 + light_source.fatt*0.75*sp) for (color, df, sp) in zip(ball.color, diff, spec)]
                         pg.draw.circle(ball_surf, clr, (iB,jB), 2)
 
             ball_surfs.append((ball_surf, (ball.start[0], ball.start[1])))
