@@ -1,6 +1,5 @@
 import pygame as pg
 import math
-import time
 from functools import cache
 
 
@@ -8,14 +7,11 @@ from functools import cache
 def aks():
     print("asdasdAsd")
 
-HEIGHT = 600
-WIDTH = 600
+HEIGHT = 800
+WIDTH = 800
 
 W2 = WIDTH/2
 H2 = HEIGHT/2
-
-# RW = 1/WIDTH
-# RH = 1/HEIGHT
 
 # GUI begin
 pg.init()
@@ -56,7 +52,7 @@ class Ball:
 light_source = LSource([0, 0, 0], [1.0, 1.0, 1.0])
 light_source.setImage("zad3/sun.png")
 
-balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 200, (1.0, 0, 1.0))]
+balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 64, (1.0, 0, 1.0))]
 ball_surfs = []
 
 def ftoc(a:float):
@@ -67,10 +63,52 @@ def vlen(vect):
 
 def normalize(vect):
     v = vlen(vect)
-    return [vect[0]/v, vect[1]/v, vect[2]/v], v
+    return [vect[0]/v, vect[1]/v, vect[2]/v]
+
+def renderBalls():
+    global balls
+    ret = []
+    for ball in balls:
+        ball_surf = pg.Surface((2*ball.radius, 2*ball.radius))
+        for i in range(-ball.radius, ball.radius,2):
+            for j in range(-ball.radius, ball.radius,2):
+                if i**2 + j**2 <= (ball.radius)**2:
+                    
+                    # basics
+                    iB = i + ball.radius
+                    jB = j + ball.radius
+
+                    z = math.sqrt((ball.radius)**2 - i**2 - j**2)
+                    L = [(light_source.pos[0] - ball.start[0]) - iB, (light_source.pos[1] - ball.start[1]) - jB, light_source.pos[2] - z]
+
+                    normal = normalize([i, j, z])
+                    # normalna zakładając, że środek kuli to (rad,rad,z)
+                    light_dir = normalize(L)
+                    
+                    # diffuse
+                    tmp = dot(normal, light_dir) # dNL
+                    diff = [tmp*light_source.color[0], tmp*light_source.color[1], tmp*light_source.color[2]]
+
+                    spec = [0,0,0]
+                    # specular
+                    if tmp > 0:
+                    # ^ to zajęło trochę myślenia rozwiązało wiele błędów - jeżeli kąt między L a N jest poza zakresem (-90°:90°), 
+                    #   to nie odbija się od powierzchni - nie trzeba liczyć specular
+                        R= normalize([light_dir[0] - 2 * normal[0]*tmp, light_dir[1]-2*normal[1]*tmp,light_dir[2]-2*normal[2]*tmp])
+                        V = normalize([W2 - ball.start[0] - iB, H2 - ball.start[1] - jB , -z])
+                        cA = dot(R, V)**(ball.n)
+                        spec = [cA*light_source.color[0], cA*light_source.color[1], cA*light_source.color[2]]
+
+                    # suma świateł
+                    clr = [ftoc(color*0.2 + df*0.25 + sp*0.75) for (color, df, sp) in zip(ball.color, diff, spec)]
+                    pg.draw.circle(ball_surf, clr, (iB,jB), 2)
+        ret.append((ball_surf, (ball.start[0], ball.start[1])))
+    return ret
+
+
 
 def update():
-
+    global ball_surfs
     if len(keys_pressed) != 0:
         if pg.K_w in keys_pressed:
             light_source.move(dz=move_speed)
@@ -85,46 +123,10 @@ def update():
         if pg.K_q in keys_pressed:
             light_source.move(dy=-move_speed)
         if pg.K_ESCAPE in keys_pressed:
-            return 
-
-        global ball_surfs, balls
-        ball_surfs = []
-        for ball in balls:
-            ball_surf = pg.Surface((2*ball.radius, 2*ball.radius))
-            for i in range(-ball.radius, ball.radius,2):
-                for j in range(-ball.radius, ball.radius,2):
-                    if i**2 + j**2 <= (ball.radius)**2:
-                        iB = i + ball.radius
-                        jB = j + ball.radius
-                        # basics
-                        z = math.sqrt((ball.radius)**2 - i**2 - j**2)
-                        # to powinno mieć dużo sensu
-                        L = [(light_source.pos[0] - ball.start[0]) - iB, (light_source.pos[1] - ball.start[1]) - jB, light_source.pos[2] - z]# - z-ball.start[0]]#-ball.radius]
-
-                        normal, vN = normalize([i, j, z])
-                        # normalna zakładając, że środek kuli to (rad,rad,z)
-                        light_dir, vL = normalize(L)
-                        
-                        # diffuse
-                        # spójrz tu na normalną
-                        tmp = dot(normal, light_dir) # dNL
-                        # tmp = max(0.0, dNL)
-
-                        diff = [tmp*light_source.color[0], tmp*light_source.color[1], tmp*light_source.color[2]]
-
-                        # specular
-                        cT = tmp / (vN *vL) #dNL
-                        R, vR = normalize([light_dir[0] - 2 * normal[0]*cT, light_dir[1]-2*normal[1]*cT,light_dir[2]-2*normal[2]*cT])
-                        # cA = max(0.0, (dot(V, [0.0,0.0,1.0]) / vN))**(ball.n)
-                        V, vV = normalize([W2 - ball.start[0] - iB, H2 - ball.start[1] - jB , z - 1000])
-                        cA = dot(R, V)**(ball.n)
-                        spec = [cA*light_source.color[0], cA*light_source.color[1], cA*light_source.color[2]]
-
-                        # suma
-                        clr = [ftoc(color*0.2 + df*0.25 + 0.75*sp) for (color, df, sp) in zip(ball.color, diff, spec)]
-                        pg.draw.circle(ball_surf, clr, (iB,jB), 2)
-
-            ball_surfs.append((ball_surf, (ball.start[0], ball.start[1])))
+            return False
+    
+    ball_surfs = renderBalls()
+    return True
 
 
 keys_pressed = set()
@@ -141,6 +143,8 @@ def updateText():
 #GUI loop
 move_speed=10
 
+ball_surfs = renderBalls()
+
 while running:
     screen.fill((0,0,0))
     screen.blits(ball_surfs)
@@ -148,20 +152,18 @@ while running:
         screen.blit(light_source.img, (light_source.pos[0] - 15, light_source.pos[1] - 15))
     
 
-    # pg.draw.rect(screen, [255,255,255], (200,100,100,100))
     text = updateText()
     textR = text.get_rect()
     screen.blit(text, textR)
 
     pg.display.flip()
 
-    update()            
+    running = update()            
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
         if event.type == pg.KEYDOWN:
-            # if event.key == pg.K_ESCAPE:
             keys_pressed.add(event.key)
         if event.type == pg.KEYUP:
             keys_pressed.remove(event.key)
