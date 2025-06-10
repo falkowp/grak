@@ -29,11 +29,7 @@ class LSource:
         self.forward = [0, 0, 1]
         self.right = [1, 0, 0]
         self.up = [0, 1, 0]
-    def move(self, dx=0.0, dy=0.0, dz=0.0):
-        for i in range(3):
-            self.pos[i] += self.right[i] * dx
-            self.pos[i] += self.up[i] * dy
-            self.pos[i] += self.forward[i] * dz
+        # self.fatt = 1.0
     def setImage(self, path):
         self.img = pg.transform.scale(pg.image.load(path), (30,30))
     def move(self, dx=0.0, dy=0.0, dz=0.0):
@@ -41,6 +37,10 @@ class LSource:
             self.pos[i] += self.right[i] * dx
             self.pos[i] += self.up[i] * dy
             self.pos[i] += self.forward[i] * dz
+        # if self.pos[2] == 0 or -10:
+        #     self.fatt = 1
+        # else:
+        #     self.fatt = 2*self.pos[2]/(self.pos[2]**2)
     
 class Ball:
     def __init__(self, cent, rad, n, color):
