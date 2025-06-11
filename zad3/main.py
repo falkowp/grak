@@ -1,6 +1,5 @@
 import pygame as pg
 import math
-from functools import cache
 
 
 
@@ -38,10 +37,13 @@ class LSource:
             self.pos[i] += self.forward[i] * dz
     
 class Ball:
-    def __init__(self, cent, rad, n, color):
+    def __init__(self, cent, rad, n, ka, kd, ks, color):
         self.start = cent
         self.radius = rad
         self.n = n
+        self.ka = ka
+        self.ks = ks
+        self.kd = kd
         self.color = color
 
 light_source = LSource([0, 0, 0], [1.0, 1.0, 1.0])
@@ -49,9 +51,10 @@ light_source.setImage("zad3/sun.png")
 
 def resizeImage(z):
     global light_source
-    return pg.transform.scale(light_source.baseImg, (30 + z/10, 30 + z/10))
+    siz = max(1, 30+z/10)
+    return pg.transform.scale(light_source.baseImg, (siz,siz))
 
-balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 64, (1.0, 0, 1.0))]
+balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 64, 0.2, 0.75, 0.0, (1.0, 1.0, 0.0))]
 ball_surfs = []
 
 def ftoc(a:float):
@@ -72,7 +75,6 @@ def renderBalls():
         for i in range(-ball.radius, ball.radius,2):
             for j in range(-ball.radius, ball.radius,2):
                 if i**2 + j**2 <= (ball.radius)**2:
-                    
                     # basics
                     iB = i + ball.radius
                     jB = j + ball.radius
@@ -85,21 +87,21 @@ def renderBalls():
                     light_dir = normalize(L)
                     
                     # diffuse
-                    tmp = dot(normal, light_dir) # dNL
-                    diff = [tmp*light_source.color[0], tmp*light_source.color[1], tmp*light_source.color[2]]
+                    cT = dot(normal, light_dir) # dNL
+                    diff = [cT*light_source.color[0], cT*light_source.color[1], cT*light_source.color[2]]
 
                     spec = [0,0,0]
                     # specular
-                    if tmp > 0:
+                    if cT > 0:
                     # ^ to zajęło trochę myślenia rozwiązało wiele błędów - jeżeli kąt między L a N jest poza zakresem (-90°:90°), 
                     #   to nie odbija się od powierzchni - nie trzeba liczyć specular
-                        R= normalize([light_dir[0] - 2 * normal[0]*tmp, light_dir[1]-2*normal[1]*tmp,light_dir[2]-2*normal[2]*tmp])
+                        R= normalize([light_dir[0] - 2 * normal[0]*cT, light_dir[1]-2*normal[1]*cT,light_dir[2]-2*normal[2]*cT])
                         V = normalize([W2 - ball.start[0] - iB, H2 - ball.start[1] - jB , -z])
                         cA = dot(R, V)**(ball.n)
                         spec = [cA*light_source.color[0], cA*light_source.color[1], cA*light_source.color[2]]
 
                     # suma świateł
-                    clr = [ftoc(color*0.2 + df*0.25 + sp*0.75) for (color, df, sp) in zip(ball.color, diff, spec)]
+                    clr = [ftoc(color*ball.ka + df*ball.kd + sp*ball.ks) for (color, df, sp) in zip(ball.color, diff, spec)]
                     pg.draw.circle(ball_surf, clr, (iB,jB), 2)
         ret.append((ball_surf, (ball.start[0], ball.start[1])))
     return ret
@@ -154,7 +156,8 @@ while running:
         if light_source.pos[2] != lastZ:
             lastZ = light_source.pos[2]
         imedz = resizeImage(lastZ)
-        screen.blit(imedz, (light_source.pos[0] - 15, light_source.pos[1] - 15))
+        sajz = imedz.get_size()
+        screen.blit(imedz, (light_source.pos[0] - sajz[0]/2, light_source.pos[1] - sajz[1]/2))
     
 
     text = updateText()
