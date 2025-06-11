@@ -7,8 +7,8 @@ from functools import cache
 def aks():
     print("asdasdAsd")
 
-HEIGHT = 800
-WIDTH = 800
+HEIGHT = 600
+WIDTH = 600
 
 W2 = WIDTH/2
 H2 = HEIGHT/2
@@ -29,18 +29,13 @@ class LSource:
         self.forward = [0, 0, 1]
         self.right = [1, 0, 0]
         self.up = [0, 1, 0]
-        # self.fatt = 1.0
     def setImage(self, path):
-        self.img = pg.transform.scale(pg.image.load(path), (30,30))
+        self.baseImg = pg.image.load(path)
     def move(self, dx=0.0, dy=0.0, dz=0.0):
         for i in range(3):
             self.pos[i] += self.right[i] * dx
             self.pos[i] += self.up[i] * dy
             self.pos[i] += self.forward[i] * dz
-        # if self.pos[2] == 0 or -10:
-        #     self.fatt = 1
-        # else:
-        #     self.fatt = 2*self.pos[2]/(self.pos[2]**2)
     
 class Ball:
     def __init__(self, cent, rad, n, color):
@@ -51,6 +46,10 @@ class Ball:
 
 light_source = LSource([0, 0, 0], [1.0, 1.0, 1.0])
 light_source.setImage("zad3/sun.png")
+
+def resizeImage(z):
+    global light_source
+    return pg.transform.scale(light_source.baseImg, (30 + z/10, 30 + z/10))
 
 balls = [Ball([WIDTH//4,HEIGHT//4,0], int(min(WIDTH//4, HEIGHT//4)), 64, (1.0, 0, 1.0))]
 ball_surfs = []
@@ -145,11 +144,17 @@ move_speed=10
 
 ball_surfs = renderBalls()
 
+lastZ = light_source.pos[2]
+sunFlag = light_source.baseImg is not None
+
 while running:
     screen.fill((0,0,0))
     screen.blits(ball_surfs)
-    if light_source.img is not None:
-        screen.blit(light_source.img, (light_source.pos[0] - 15, light_source.pos[1] - 15))
+    if sunFlag:
+        if light_source.pos[2] != lastZ:
+            lastZ = light_source.pos[2]
+        imedz = resizeImage(lastZ)
+        screen.blit(imedz, (light_source.pos[0] - 15, light_source.pos[1] - 15))
     
 
     text = updateText()
@@ -168,6 +173,6 @@ while running:
         if event.type == pg.KEYUP:
             keys_pressed.remove(event.key)
 
-    clock.tick(60)
+    # clock.tick(60)
 
 pg.quit()
